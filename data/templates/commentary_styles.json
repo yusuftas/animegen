@@ -1,0 +1,373 @@
+{
+  "analytical": {
+    "opening_hooks": [
+      "Here's something most fans missed in this scene...",
+      "The animation technique here is fascinating because...",
+      "Notice how the director chose to...",
+      "This scene demonstrates masterful...",
+      "The subtle details in this moment reveal...",
+      "What makes this scene exceptional is...",
+      "The cinematography here tells a story through...",
+      "This moment showcases the animator's skill in...",
+      "The composition of this shot reveals...",
+      "Breaking down this scene, we can see..."
+    ],
+    "transition_phrases": [
+      "But that's not all...",
+      "Even more interesting is...",
+      "This connects to...",
+      "What's really clever here is...",
+      "Building on that...",
+      "Furthermore...",
+      "Additionally...",
+      "More importantly...",
+      "This also demonstrates...",
+      "Looking deeper..."
+    ],
+    "closing_phrases": [
+      "What do you think about this scene?",
+      "Let me know your analysis in the comments!",
+      "Drop your thoughts below!",
+      "Did you notice these details too?",
+      "Share your interpretation!",
+      "What other techniques did you spot?",
+      "Tell me what you observed!",
+      "Your analytical thoughts?",
+      "Break it down with me in the comments!",
+      "What's your take on this scene?"
+    ],
+    "emphasis_words": [
+      "masterful", "brilliant", "exceptional", "subtle", "intricate", 
+      "sophisticated", "deliberate", "intentional", "strategic", "calculated"
+    ],
+    "technical_terms": [
+      "composition", "cinematography", "direction", "animation", "storyboarding",
+      "color palette", "visual storytelling", "character acting", "timing", "pacing"
+    ]
+  },
+  "trivia_focused": {
+    "opening_hooks": [
+      "Did you know that in the manga...",
+      "Fun fact: The voice actor actually...",
+      "This scene took 3 months to animate because...",
+      "Here's a cool behind-the-scenes fact...",
+      "Most fans don't realize that...",
+      "The creator revealed in an interview that...",
+      "Production notes show that...",
+      "Originally, this scene was supposed to...",
+      "The animators had to research...",
+      "Interestingly, the inspiration for this came from..."
+    ],
+    "transition_phrases": [
+      "Another cool fact...",
+      "Speaking of trivia...",
+      "Here's another detail...",
+      "On that note...",
+      "Additionally...",
+      "Fun fact number two...",
+      "Also worth noting...",
+      "Here's more insider info...",
+      "The story gets better...",
+      "But wait, there's more..."
+    ],
+    "closing_phrases": [
+      "Know any other cool facts? Share them below!",
+      "What other trivia should I cover?",
+      "Drop more fun facts in the comments!",
+      "Got any insider knowledge?",
+      "Share your anime trivia!",
+      "What production facts do you know?",
+      "Any other behind-the-scenes info?",
+      "Tell me your favorite anime facts!",
+      "More trivia in the comments please!",
+      "What should I research next?"
+    ],
+    "fact_categories": [
+      "production", "voice_acting", "cultural_reference", "manga_difference",
+      "animation_technique", "easter_egg", "creator_intention", "real_world_inspiration"
+    ],
+    "trivia_starters": [
+      "Did you know", "Fun fact", "Here's something interesting",
+      "Most people don't realize", "Behind the scenes", "Production trivia",
+      "Cool detail", "Insider info", "Creator's note", "Animation fact"
+    ]
+  },
+  "enthusiastic": {
+    "opening_hooks": [
+      "This scene is absolutely incredible!",
+      "Can we talk about how amazing this is?",
+      "I'm obsessed with this moment because...",
+      "This is why I love anime!",
+      "This scene gives me chills every time!",
+      "OH MY GOSH, this part is so good!",
+      "I literally can't even with this scene!",
+      "This moment is pure perfection!",
+      "Every time I watch this I get goosebumps!",
+      "This is peak anime right here!"
+    ],
+    "transition_phrases": [
+      "And it gets even better!",
+      "But wait, there's more!",
+      "This is so good!",
+      "I can't even!",
+      "It's just perfect!",
+      "The hype is real!",
+      "My excitement levels are through the roof!",
+      "This keeps getting better!",
+      "I'm literally shaking!",
+      "The epicness continues!"
+    ],
+    "closing_phrases": [
+      "Wasn't that amazing? Let me know what you think!",
+      "That was incredible! What's your favorite part?",
+      "So epic! Share your thoughts!",
+      "I'm still not over this! Are you?",
+      "Tell me this didn't give you chills!",
+      "Rate this scene out of 10!",
+      "Drop your hype levels in the comments!",
+      "This deserves all the love! Agree?",
+      "I need to hear your reactions!",
+      "Let's geek out together in the comments!"
+    ],
+    "excitement_words": [
+      "incredible", "amazing", "spectacular", "breathtaking", "phenomenal",
+      "mind-blowing", "epic", "legendary", "iconic", "masterpiece"
+    ],
+    "intensifiers": [
+      "absolutely", "completely", "totally", "utterly", "insanely",
+      "ridiculously", "impossibly", "unbelievably", "extraordinarily"
+    ]
+  },
+  "mysterious": {
+    "opening_hooks": [
+      "There's a hidden meaning in this scene...",
+      "This moment holds a secret...",
+      "What if I told you this scene...",
+      "The true purpose of this scene is...",
+      "Hidden in plain sight is...",
+      "Something darker lurks beneath this moment...",
+      "This scene isn't what it appears to be...",
+      "A careful observer might notice...",
+      "The symbolism here runs deeper than you think...",
+      "This seemingly innocent scene actually..."
+    ],
+    "transition_phrases": [
+      "But the mystery deepens...",
+      "That's not the only secret...",
+      "Things aren't what they seem...",
+      "The plot thickens...",
+      "There's more beneath the surface...",
+      "The truth becomes clearer...",
+      "Another layer reveals itself...",
+      "The puzzle pieces start connecting...",
+      "A pattern emerges...",
+      "The real meaning unfolds..."
+    ],
+    "closing_phrases": [
+      "What secrets did you uncover?",
+      "Share your theories below!",
+      "Did you catch the hidden meaning?",
+      "What mysteries do you see?",
+      "Tell me your interpretations!",
+      "What else is hiding in plain sight?",
+      "Drop your conspiracy theories!",
+      "What patterns did you notice?",
+      "Decode this with me in the comments!",
+      "What's your theory?"
+    ],
+    "mystery_words": [
+      "hidden", "secret", "mysterious", "enigmatic", "cryptic",
+      "veiled", "obscure", "subliminal", "underlying", "implicit"
+    ],
+    "revelation_phrases": [
+      "reveals", "unveils", "exposes", "uncovers", "hints at",
+      "suggests", "implies", "foreshadows", "alludes to", "conceals"
+    ]
+  },
+  "comparison": {
+    "opening_hooks": [
+      "This scene reminds me of...",
+      "Unlike other anime that...",
+      "Compared to the manga version...",
+      "This is similar to... but different because...",
+      "While most anime do this, {anime_title}...",
+      "If you've seen {other_anime}, you'll notice...",
+      "This takes a different approach than...",
+      "Where other shows might..., this anime...",
+      "Drawing parallels to...",
+      "In contrast to typical anime..."
+    ],
+    "transition_phrases": [
+      "In contrast...",
+      "Similarly...",
+      "On the other hand...",
+      "This differs because...",
+      "Like we saw before...",
+      "However...",
+      "Conversely...",
+      "By comparison...",
+      "In a similar vein...",
+      "Alternatively..."
+    ],
+    "closing_phrases": [
+      "What other comparisons do you see?",
+      "How does this compare to your favorites?",
+      "Share similar scenes you've noticed!",
+      "What parallels did you draw?",
+      "Compare and contrast in the comments!",
+      "What other anime does this remind you of?",
+      "Drop your comparisons below!",
+      "How does this stack up?",
+      "What's your ranking?",
+      "Make your own comparisons!"
+    ],
+    "comparison_frameworks": [
+      "manga_vs_anime", "genre_conventions", "studio_styles", 
+      "character_archetypes", "narrative_techniques", "visual_styles",
+      "cultural_contexts", "time_periods", "target_demographics"
+    ],
+    "comparative_terms": [
+      "similarly", "differently", "in contrast", "by comparison",
+      "meanwhile", "whereas", "alternatively", "conversely", "likewise"
+    ]
+  },
+  "educational": {
+    "opening_hooks": [
+      "This scene teaches us about...",
+      "From an animation perspective...",
+      "The cultural significance here is...",
+      "This demonstrates the principle of...",
+      "Understanding this technique helps us appreciate...",
+      "The historical context of this scene...",
+      "From a storytelling standpoint...",
+      "This is a perfect example of...",
+      "The psychology behind this moment...",
+      "This scene illustrates the concept of..."
+    ],
+    "transition_phrases": [
+      "This principle also applies to...",
+      "Building on this concept...",
+      "Another important aspect is...",
+      "This relates to the broader theme of...",
+      "We can also observe...",
+      "This technique is also used in...",
+      "The underlying theory suggests...",
+      "From this, we learn that...",
+      "This demonstrates how...",
+      "The practical application is..."
+    ],
+    "closing_phrases": [
+      "What did you learn from this scene?",
+      "Share your educational insights!",
+      "What techniques did you pick up?",
+      "Tell me what this taught you!",
+      "Drop your learning moments below!",
+      "What knowledge did you gain?",
+      "Share your analysis!",
+      "What principles did you identify?",
+      "Your educational takeaways?",
+      "What would you teach others about this?"
+    ],
+    "educational_domains": [
+      "animation_principles", "storytelling_techniques", "cultural_studies",
+      "psychology", "art_theory", "film_studies", "japanese_culture",
+      "character_development", "narrative_structure", "visual_communication"
+    ],
+    "learning_verbs": [
+      "demonstrates", "illustrates", "exemplifies", "teaches", "shows",
+      "reveals", "explains", "clarifies", "highlights", "emphasizes"
+    ]
+  },
+  "comedic": {
+    "opening_hooks": [
+      "Okay, but can we talk about how hilarious this is?",
+      "This scene had me rolling because...",
+      "The comedy timing here is *chef's kiss*",
+      "I can't stop laughing at this part!",
+      "This is peak comedy right here!",
+      "The absurdity of this moment is everything!",
+      "This scene is comedy gold because...",
+      "I'm wheezing at this part!",
+      "The humor in this scene hits different!",
+      "This is why anime comedy is superior!"
+    ],
+    "transition_phrases": [
+      "But it gets funnier!",
+      "The comedy doesn't stop there!",
+      "And then this happens!",
+      "Plot twist: it gets even more ridiculous!",
+      "The hilarity continues!",
+      "But wait, there's more comedy!",
+      "The absurdity levels increase!",
+      "And somehow it gets better!",
+      "The writers really said 'hold my sake'!",
+      "The comedic timing is impeccable!"
+    ],
+    "closing_phrases": [
+      "Tell me this didn't make you laugh!",
+      "Rate the comedy out of 10!",
+      "Share your favorite funny moments!",
+      "What made you laugh the most?",
+      "Drop your comedy reactions below!",
+      "Which part cracked you up?",
+      "Let's share the laughs in the comments!",
+      "Your funniest anime moments?",
+      "Comedy gold, right? Tell me I'm not alone!",
+      "What's your humor rating?"
+    ],
+    "comedy_types": [
+      "slapstick", "situational", "character", "absurdist", "verbal",
+      "visual", "timing", "ironic", "parody", "self-aware"
+    ],
+    "humor_indicators": [
+      "hilarious", "funny", "comedy gold", "ridiculous", "absurd",
+      "witty", "clever", "silly", "goofy", "brilliant"
+    ]
+  },
+  "dramatic": {
+    "opening_hooks": [
+      "This moment will break your heart...",
+      "The emotional weight of this scene is crushing...",
+      "Prepare yourself for this devastating moment...",
+      "The gravity of this situation hits hard...",
+      "This scene carries the weight of the entire series...",
+      "The emotional devastation here is palpable...",
+      "This moment changed everything...",
+      "The raw emotion in this scene is overwhelming...",
+      "This is where the story takes a dark turn...",
+      "The intensity of this moment is suffocating..."
+    ],
+    "transition_phrases": [
+      "The pain deepens...",
+      "But the tragedy doesn't end there...",
+      "The emotional toll continues...",
+      "The weight becomes unbearable...",
+      "The darkness consumes...",
+      "Hope fades further...",
+      "The despair is all-consuming...",
+      "Reality crashes down...",
+      "The consequences unfold...",
+      "The inevitable arrives..."
+    ],
+    "closing_phrases": [
+      "How did this scene make you feel?",
+      "Share your emotional reactions!",
+      "Did this scene hit you as hard as it hit me?",
+      "Tell me about your feels!",
+      "Rate the emotional impact!",
+      "How are you processing this?",
+      "Share your thoughts on this heavy moment!",
+      "What emotions did this evoke?",
+      "Let's process this together in the comments!",
+      "How did you cope with this scene?"
+    ],
+    "emotional_intensifiers": [
+      "devastating", "heartbreaking", "crushing", "overwhelming", "profound",
+      "gut-wrenching", "soul-crushing", "earth-shattering", "life-changing"
+    ],
+    "dramatic_elements": [
+      "tragedy", "sacrifice", "loss", "betrayal", "revelation",
+      "confrontation", "despair", "hope", "redemption", "transformation"
+    ]
+  }
+}

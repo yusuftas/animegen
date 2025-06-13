@@ -14,6 +14,11 @@ from ..utils.logger import LoggerMixin
 from ..scene_analysis.scene_extractor import SceneExtractor, Scene
 from ..scene_analysis.interest_detector import InterestDetector, InterestScore
 from ..scene_analysis.audio_analyzer import AudioAnalyzer, AudioPeak
+from ..content_intelligence.anime_knowledge_base import AnimeKnowledgeBase, AnimeInfo
+from ..content_intelligence.moment_classifier import MomentClassifier, MomentClassification
+from ..content_intelligence.content_matcher import ContentMatcher, ContentMatch
+from ..script_generation.script_generator import ScriptGenerator, GeneratedScript
+from ..script_generation.fact_integrator import FactIntegrator, FactIntegrationContext
 
 @dataclass
 class ProcessingResult:
@@ -21,6 +26,10 @@ class ProcessingResult:
     scene: Scene
     interest_score: InterestScore
     audio_peaks: List[AudioPeak]
+    classification: MomentClassification
+    anime_info: Optional[AnimeInfo]
+    content_matches: List[ContentMatch]
+    generated_script: Optional[GeneratedScript]
     metadata: Dict[str, Any]
 
 class AnimeShortsPipeline(LoggerMixin):
@@ -36,7 +45,14 @@ class AnimeShortsPipeline(LoggerMixin):
         self.interest_detector = InterestDetector(self._get_interest_config())
         self.audio_analyzer = AudioAnalyzer(self.config.audio.sample_rate)
         
-        self.logger.info("Anime Shorts Pipeline initialized")
+        # Phase 2: Content Intelligence components
+        self.anime_knowledge_base = AnimeKnowledgeBase()
+        self.moment_classifier = MomentClassifier()
+        self.content_matcher = ContentMatcher()
+        self.script_generator = ScriptGenerator()
+        self.fact_integrator = FactIntegrator()
+        
+        self.logger.info("Anime Shorts Pipeline initialized with Phase 2 features")
     
     def _get_interest_config(self) -> Dict[str, Any]:
         """Convert interest detection config to dictionary"""
@@ -107,7 +123,13 @@ class AnimeShortsPipeline(LoggerMixin):
             
             self.logger.info(f"Selected {len(filtered_scenes)} high-quality scenes")
             
-            # Step 5: Generate shorts (placeholder for now)
+            # Step 5: Get anime information
+            self.logger.info("Step 5: Fetching anime information...")
+            anime_info = self.anime_knowledge_base.get_anime_info(anime_name)
+            if anime_info:
+                self.logger.info(f"Found anime info: {anime_info.title}")
+            
+            # Step 6: Process selected scenes with full intelligence pipeline
             shorts_generated = []
             selected_scenes = filtered_scenes[:max_shorts]
             
@@ -115,28 +137,135 @@ class AnimeShortsPipeline(LoggerMixin):
                 self.logger.info(f"Processing scene {i}/{len(selected_scenes)} "
                                f"(score: {score.total_score:.3f})")
                 
-                # For now, just create a placeholder result
-                # In future phases, this will include script generation, video editing, etc.
-                short_info = {
-                    'scene_id': i,
-                    'start_time': scene.start_time,
-                    'end_time': scene.end_time,
-                    'duration': scene.duration,
-                    'interest_score': score.total_score,
-                    'anime_name': anime_name,
-                    'source_video': video_path
-                }
-                
-                # Create placeholder output filename
-                output_filename = f"{anime_name}_short_{i:02d}.json"
-                output_file = output_path / output_filename
-                
-                # Save scene info (placeholder for actual video generation)
-                import json
-                with open(output_file, 'w') as f:
-                    json.dump(short_info, f, indent=2)
-                
-                shorts_generated.append(str(output_file))
+                try:
+                    # Classify the moment
+                    classification = self.moment_classifier.classify_moment(
+                        video_path, scene, score, 
+                        context={'anime_name': anime_name} if not anime_info else {
+                            'anime_name': anime_info.title,
+                            'genres': anime_info.genres,
+                            'themes': anime_info.themes
+                        }
+                    )
+                    
+                    # Store scene embedding for future matching
+                    scene_id = None
+                    if anime_info:
+                        scene_id = self.content_matcher.store_scene_embedding(
+                            scene, anime_info.mal_id or 0, 1, classification, score, anime_info
+                        )
+                    
+                    # Find related content
+                    content_matches = []
+                    if anime_info:
+                        content_matches = self.content_matcher.find_related_moments(
+                            scene, classification, score, anime_info, limit=3
+                        )
+                    
+                    # Get relevant trivia
+                    trivia = []
+                    if anime_info and anime_info.mal_id:
+                        trivia = self.anime_knowledge_base.get_relevant_trivia(
+                            anime_info.mal_id, limit=3
+                        )
+                    
+                    # Generate script
+                    generated_script = None
+                    if anime_info:
+                        generated_script = self.script_generator.generate_script(
+                            scene, classification, score, anime_info,
+                            content_matches=content_matches,
+                            trivia=trivia
+                        )
+                    
+                    # Create comprehensive result
+                    result = ProcessingResult(
+                        video_path=video_path,
+                        scene=scene,
+                        interest_score=score,
+                        audio_peaks=[peak for peak in audio_peaks 
+                                   if scene.start_time <= peak.timestamp <= scene.end_time],
+                        classification=classification,
+                        anime_info=anime_info,
+                        content_matches=content_matches,
+                        generated_script=generated_script,
+                        metadata={
+                            'scene_id': scene_id,
+                            'processing_time': 'calculated_later',
+                            'pipeline_version': '2.0'
+                        }
+                    )
+                    
+                    # Save comprehensive result
+                    output_filename = f"{anime_name}_short_{i:02d}.json"
+                    output_file = output_path / output_filename
+                    
+                    result_dict = {
+                        'scene_info': {
+                            'start_time': scene.start_time,
+                            'end_time': scene.end_time,
+                            'duration': scene.duration,
+                            'confidence': scene.confidence
+                        },
+                        'interest_score': {
+                            'total': score.total_score,
+                            'motion': score.motion_score,
+                            'face': score.face_score,
+                            'color_variance': score.color_variance_score,
+                            'composition': score.composition_score,
+                            'audio_peaks': score.audio_peak_score
+                        },
+                        'classification': {
+                            'primary_type': classification.primary_type.value,
+                            'confidence': classification.confidence,
+                            'secondary_types': [(t.value, s) for t, s in classification.secondary_types]
+                        },
+                        'anime_info': {
+                            'title': anime_info.title if anime_info else anime_name,
+                            'genres': anime_info.genres if anime_info else [],
+                            'themes': anime_info.themes if anime_info else []
+                        },
+                        'content_matches': len(content_matches),
+                        'trivia_count': len(trivia),
+                        'script': {
+                            'style': generated_script.style.value if generated_script else None,
+                            'word_count': generated_script.word_count if generated_script else 0,
+                            'segments': len(generated_script.segments) if generated_script else 0,
+                            'full_text': ' '.join([seg.text for seg in generated_script.segments]) if generated_script else None
+                        },
+                        'source_video': video_path,
+                        'pipeline_version': '2.0'
+                    }
+                    
+                    import json
+                    with open(output_file, 'w') as f:
+                        json.dump(result_dict, f, indent=2)
+                    
+                    shorts_generated.append(str(output_file))
+                    
+                except Exception as e:
+                    self.logger.error(f"Failed to process scene {i}: {e}")
+                    # Create fallback result
+                    fallback_result = {
+                        'scene_info': {
+                            'start_time': scene.start_time,
+                            'end_time': scene.end_time,
+                            'duration': scene.duration
+                        },
+                        'interest_score': score.total_score,
+                        'error': str(e),
+                        'anime_name': anime_name,
+                        'source_video': video_path
+                    }
+                    
+                    output_filename = f"{anime_name}_short_{i:02d}_error.json"
+                    output_file = output_path / output_filename
+                    
+                    import json
+                    with open(output_file, 'w') as f:
+                        json.dump(fallback_result, f, indent=2)
+                    
+                    shorts_generated.append(str(output_file))
             
             self.logger.info(f"Successfully processed {len(shorts_generated)} shorts")
             return shorts_generated
@@ -278,8 +407,12 @@ class AnimeShortsPipeline(LoggerMixin):
                 'scene_detection': True,
                 'interest_scoring': True,
                 'audio_analysis': True,
-                'script_generation': False,  # Not implemented yet
-                'video_editing': False,      # Not implemented yet
-                'youtube_upload': False      # Not implemented yet
+                'anime_knowledge_base': True,
+                'moment_classification': True,
+                'content_matching': True,
+                'script_generation': True,
+                'fact_integration': True,
+                'video_editing': False,      # Phase 3
+                'youtube_upload': False      # Phase 4
             }
         }
