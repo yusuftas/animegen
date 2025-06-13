@@ -12,9 +12,14 @@ import pickle
 from pathlib import Path
 import logging
 
-from ..scene_analysis.scene_extractor import Scene
-from ..scene_analysis.interest_detector import InterestScore
-from ..utils.logger import LoggerMixin
+try:
+    from ..scene_analysis.scene_extractor import Scene
+    from ..scene_analysis.interest_detector import InterestScore
+    from ..utils.logger import LoggerMixin
+except ImportError:
+    from scene_analysis.scene_extractor import Scene
+    from scene_analysis.interest_detector import InterestScore
+    from utils.logger import LoggerMixin
 
 class MomentType(Enum):
     ACTION_SEQUENCE = "action_sequence"

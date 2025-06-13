@@ -11,10 +11,16 @@ from enum import Enum
 import json
 from pathlib import Path
 
-from ..content_intelligence.anime_knowledge_base import AnimeInfo, AnimeTrivia
-from ..content_intelligence.moment_classifier import MomentClassification, MomentType
-from ..scene_analysis.scene_extractor import Scene
-from ..utils.logger import LoggerMixin
+try:
+    from ..content_intelligence.anime_knowledge_base import AnimeInfo, AnimeTrivia
+    from ..content_intelligence.moment_classifier import MomentClassification, MomentType
+    from ..scene_analysis.scene_extractor import Scene
+    from ..utils.logger import LoggerMixin
+except ImportError:
+    from content_intelligence.anime_knowledge_base import AnimeInfo, AnimeTrivia
+    from content_intelligence.moment_classifier import MomentClassification, MomentType
+    from scene_analysis.scene_extractor import Scene
+    from utils.logger import LoggerMixin
 
 class FactRelevance(Enum):
     HIGH = "high"        # Directly related to current scene

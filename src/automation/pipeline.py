@@ -9,16 +9,30 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 import logging
 
-from ..utils.config import get_config, AppConfig
-from ..utils.logger import LoggerMixin
-from ..scene_analysis.scene_extractor import SceneExtractor, Scene
-from ..scene_analysis.interest_detector import InterestDetector, InterestScore
-from ..scene_analysis.audio_analyzer import AudioAnalyzer, AudioPeak
-from ..content_intelligence.anime_knowledge_base import AnimeKnowledgeBase, AnimeInfo
-from ..content_intelligence.moment_classifier import MomentClassifier, MomentClassification
-from ..content_intelligence.content_matcher import ContentMatcher, ContentMatch
-from ..script_generation.script_generator import ScriptGenerator, GeneratedScript
-from ..script_generation.fact_integrator import FactIntegrator, FactIntegrationContext
+try:
+    # Try relative imports first (when used as a package)
+    from ..utils.config import get_config, AppConfig
+    from ..utils.logger import LoggerMixin
+    from ..scene_analysis.scene_extractor import SceneExtractor, Scene
+    from ..scene_analysis.interest_detector import InterestDetector, InterestScore
+    from ..scene_analysis.audio_analyzer import AudioAnalyzer, AudioPeak
+    from ..content_intelligence.anime_knowledge_base import AnimeKnowledgeBase, AnimeInfo
+    from ..content_intelligence.moment_classifier import MomentClassifier, MomentClassification
+    from ..content_intelligence.content_matcher import ContentMatcher, ContentMatch
+    from ..script_generation.script_generator import ScriptGenerator, GeneratedScript
+    from ..script_generation.fact_integrator import FactIntegrator, FactIntegrationContext
+except ImportError:
+    # Fallback to absolute imports (when running directly)
+    from utils.config import get_config, AppConfig
+    from utils.logger import LoggerMixin
+    from scene_analysis.scene_extractor import SceneExtractor, Scene
+    from scene_analysis.interest_detector import InterestDetector, InterestScore
+    from scene_analysis.audio_analyzer import AudioAnalyzer, AudioPeak
+    from content_intelligence.anime_knowledge_base import AnimeKnowledgeBase, AnimeInfo
+    from content_intelligence.moment_classifier import MomentClassifier, MomentClassification
+    from content_intelligence.content_matcher import ContentMatcher, ContentMatch
+    from script_generation.script_generator import ScriptGenerator, GeneratedScript
+    from script_generation.fact_integrator import FactIntegrator, FactIntegrationContext
 
 @dataclass
 class ProcessingResult:

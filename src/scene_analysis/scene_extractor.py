@@ -3,7 +3,13 @@ Scene Detection and Extraction Module
 Identifies and extracts interesting scenes from anime videos
 """
 
-import cv2
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except ImportError:
+    CV2_AVAILABLE = False
+    logging.warning("OpenCV (cv2) not available. Fallback scene detection will be disabled.")
+
 import numpy as np
 from pathlib import Path
 from typing import List, Tuple, Dict, Any
@@ -42,8 +48,11 @@ class SceneExtractor:
             
         if SCENEDETECT_AVAILABLE:
             return self._extract_scenes_scenedetect(video_path)
-        else:
+        elif CV2_AVAILABLE:
             return self._extract_scenes_fallback(video_path)
+        else:
+            self.logger.error("Neither scenedetect nor OpenCV available for scene extraction")
+            raise ImportError("Scene extraction requires either scenedetect or OpenCV")
     
     def _extract_scenes_scenedetect(self, video_path: str) -> List[Scene]:
         """Extract scenes using PySceneDetect library"""
@@ -61,15 +70,18 @@ class SceneExtractor:
         scenes = []
         
         for i, (start_time, end_time) in enumerate(scene_list):
-            duration = (end_time - start_time).total_seconds()
+            # Convert FrameTimecode to seconds
+            start_seconds = start_time.get_seconds() if hasattr(start_time, 'get_seconds') else float(start_time)
+            end_seconds = end_time.get_seconds() if hasattr(end_time, 'get_seconds') else float(end_time)
+            duration = end_seconds - start_seconds
             
             if self.min_scene_length <= duration <= self.max_scene_length:
                 scene = Scene(
-                    start_time=start_time.total_seconds(),
-                    end_time=end_time.total_seconds(),
+                    start_time=start_seconds,
+                    end_time=end_seconds,
                     duration=duration,
-                    start_frame=int(start_time.total_seconds() * fps),
-                    end_frame=int(end_time.total_seconds() * fps),
+                    start_frame=int(start_seconds * fps),
+                    end_frame=int(end_seconds * fps),
                     confidence=1.0,
                     metadata={'method': 'scenedetect', 'detector': 'content'}
                 )
@@ -81,6 +93,9 @@ class SceneExtractor:
     
     def _extract_scenes_fallback(self, video_path: str) -> List[Scene]:
         """Fallback scene detection using OpenCV"""
+        if not CV2_AVAILABLE:
+            raise ImportError("OpenCV not available for fallback scene detection")
+            
         self.logger.info(f"Extracting scenes from {video_path} using fallback method")
         
         cap = cv2.VideoCapture(video_path)

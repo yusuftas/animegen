@@ -12,11 +12,18 @@ import json
 import hashlib
 from collections import defaultdict
 
-from ..scene_analysis.scene_extractor import Scene
-from ..scene_analysis.interest_detector import InterestScore
-from .moment_classifier import MomentClassification, MomentType
-from .anime_knowledge_base import AnimeInfo
-from ..utils.logger import LoggerMixin
+try:
+    from ..scene_analysis.scene_extractor import Scene
+    from ..scene_analysis.interest_detector import InterestScore
+    from .moment_classifier import MomentClassification, MomentType
+    from .anime_knowledge_base import AnimeInfo
+    from ..utils.logger import LoggerMixin
+except ImportError:
+    from scene_analysis.scene_extractor import Scene
+    from scene_analysis.interest_detector import InterestScore
+    from content_intelligence.moment_classifier import MomentClassification, MomentType
+    from content_intelligence.anime_knowledge_base import AnimeInfo
+    from utils.logger import LoggerMixin
 
 @dataclass
 class ContentMatch:

@@ -13,7 +13,10 @@ from datetime import datetime, timedelta
 import time
 import logging
 
-from ..utils.logger import LoggerMixin
+try:
+    from ..utils.logger import LoggerMixin
+except ImportError:
+    from utils.logger import LoggerMixin
 
 @dataclass
 class AnimeInfo:

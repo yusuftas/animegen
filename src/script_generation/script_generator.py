@@ -11,12 +11,20 @@ from enum import Enum
 import json
 from pathlib import Path
 
-from ..scene_analysis.scene_extractor import Scene
-from ..scene_analysis.interest_detector import InterestScore
-from ..content_intelligence.moment_classifier import MomentClassification, MomentType
-from ..content_intelligence.anime_knowledge_base import AnimeInfo, AnimeTrivia
-from ..content_intelligence.content_matcher import ContentMatch
-from ..utils.logger import LoggerMixin
+try:
+    from ..scene_analysis.scene_extractor import Scene
+    from ..scene_analysis.interest_detector import InterestScore
+    from ..content_intelligence.moment_classifier import MomentClassification, MomentType
+    from ..content_intelligence.anime_knowledge_base import AnimeInfo, AnimeTrivia
+    from ..content_intelligence.content_matcher import ContentMatch
+    from ..utils.logger import LoggerMixin
+except ImportError:
+    from scene_analysis.scene_extractor import Scene
+    from scene_analysis.interest_detector import InterestScore
+    from content_intelligence.moment_classifier import MomentClassification, MomentType
+    from content_intelligence.anime_knowledge_base import AnimeInfo, AnimeTrivia
+    from content_intelligence.content_matcher import ContentMatch
+    from utils.logger import LoggerMixin
 
 class ScriptStyle(Enum):
     ANALYTICAL = "analytical"
