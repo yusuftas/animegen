@@ -1,0 +1,58 @@
+# Anime Shorts Generator Configuration
+
+# Scene Analysis Settings
+scene_analysis:
+  threshold: 30.0
+  min_scene_length: 2.0  # seconds
+  max_scene_length: 15.0  # seconds
+  
+# Interest Detection Settings
+interest_detection:
+  motion_threshold: 0.3
+  face_detection_enabled: true
+  color_variance_weight: 0.2
+  motion_weight: 0.4
+  composition_weight: 0.2
+  audio_peak_weight: 0.2
+
+# Audio Settings
+audio:
+  sample_rate: 44100
+  original_audio_volume: 0.3
+  background_music_volume: 0.2
+  voiceover_volume: 1.0
+
+# Video Settings
+video:
+  output_resolution: [1080, 1920]  # 9:16 aspect ratio for shorts
+  fps: 30
+  quality: "high"
+  format: "mp4"
+
+# Script Generation Settings
+script_generation:
+  max_script_length: 150  # words
+  min_script_length: 50   # words
+  styles:
+    - analytical
+    - trivia_focused
+    - enthusiastic
+    - mysterious
+    - comparison
+
+# YouTube Settings
+youtube:
+  max_title_length: 100
+  max_description_length: 5000
+  default_tags:
+    - anime
+    - shorts
+    - animation
+    - manga
+    - otaku
+
+# Quality Control
+quality_control:
+  min_retention_prediction: 0.4
+  max_copyright_risk: 0.3
+  min_engagement_score: 0.5
