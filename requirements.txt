@@ -31,9 +31,6 @@ google-auth>=2.22.0
 # Text-to-Speech
 azure-cognitiveservices-speech>=1.30.0
 
-# Database
-sqlite3
-
 # Web framework (for dashboard)
 flask>=2.3.0
 
