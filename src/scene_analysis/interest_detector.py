@@ -117,20 +117,72 @@ class InterestDetector:
         motion_scores = []
         
         for i in range(1, len(frames)):
-            prev_gray = cv2.cvtColor(frames[i-1], cv2.COLOR_BGR2GRAY)
-            curr_gray = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
-            
-            # Calculate optical flow
-            flow = cv2.calcOpticalFlowPyrLK(
-                prev_gray, curr_gray, 
-                cv2.goodFeaturesToTrack(prev_gray, maxCorners=100, qualityLevel=0.3, minDistance=7),
-                None
-            )[0]
-            
-            if flow is not None and len(flow) > 0:
-                # Calculate motion magnitude
-                motion_magnitude = np.mean(np.sqrt(flow[:, 0]**2 + flow[:, 1]**2))
-                motion_scores.append(motion_magnitude)
+            try:
+                prev_gray = cv2.cvtColor(frames[i-1], cv2.COLOR_BGR2GRAY)
+                curr_gray = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
+                
+                # Find good features to track
+                prev_pts = cv2.goodFeaturesToTrack(
+                    prev_gray, maxCorners=100, qualityLevel=0.3, minDistance=7
+                )
+                
+                # Check if we found any valid points
+                if prev_pts is None or len(prev_pts) == 0:
+                    # Fallback to frame difference if no features found
+                    frame_diff = cv2.absdiff(prev_gray, curr_gray)
+                    motion_magnitude = np.mean(frame_diff) / 255.0
+                    motion_scores.append(motion_magnitude)
+                    continue
+                
+                # Ensure points are in the correct format
+                if prev_pts.ndim != 3 or prev_pts.shape[1] != 1 or prev_pts.shape[2] != 2:
+                    # Reshape if necessary
+                    prev_pts = prev_pts.reshape(-1, 1, 2).astype(np.float32)
+                
+                # Calculate optical flow
+                next_pts, status, error = cv2.calcOpticalFlowPyrLK(
+                    prev_gray, curr_gray, prev_pts, None
+                )
+                
+                # Filter out points with bad status
+                if next_pts is not None and status is not None:
+                    good_new = next_pts[status == 1]
+                    good_old = prev_pts[status == 1]
+                    
+                    if len(good_new) > 0 and len(good_old) > 0:
+                        # Calculate motion vectors
+                        motion_vectors = good_new - good_old
+                        if motion_vectors.ndim == 3:
+                            motion_vectors = motion_vectors.reshape(-1, 2)
+                        
+                        # Calculate motion magnitude
+                        motion_magnitude = np.mean(np.sqrt(
+                            motion_vectors[:, 0]**2 + motion_vectors[:, 1]**2
+                        ))
+                        motion_scores.append(motion_magnitude)
+                    else:
+                        # Fallback to frame difference
+                        frame_diff = cv2.absdiff(prev_gray, curr_gray)
+                        motion_magnitude = np.mean(frame_diff) / 255.0
+                        motion_scores.append(motion_magnitude)
+                else:
+                    # Fallback to frame difference
+                    frame_diff = cv2.absdiff(prev_gray, curr_gray)
+                    motion_magnitude = np.mean(frame_diff) / 255.0
+                    motion_scores.append(motion_magnitude)
+                    
+            except Exception as e:
+                self.logger.warning(f"Motion calculation failed, using fallback: {e}")
+                # Fallback to simple frame difference
+                try:
+                    prev_gray = cv2.cvtColor(frames[i-1], cv2.COLOR_BGR2GRAY)
+                    curr_gray = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
+                    frame_diff = cv2.absdiff(prev_gray, curr_gray)
+                    motion_magnitude = np.mean(frame_diff) / 255.0
+                    motion_scores.append(motion_magnitude)
+                except Exception:
+                    # If even fallback fails, use zero score
+                    motion_scores.append(0.0)
         
         if not motion_scores:
             return 0.0
