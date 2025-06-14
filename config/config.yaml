@@ -3,7 +3,7 @@
 # Scene Analysis Settings
 scene_analysis:
   threshold: 30.0
-  min_scene_length: 2.0  # seconds
+  min_scene_length: 5.0  # seconds
   max_scene_length: 15.0  # seconds
   
 # Interest Detection Settings
