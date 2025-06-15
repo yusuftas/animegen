@@ -1,3 +1,6 @@
 *.pyc
 
 *.mkv
+*.mp4
+
+output/*

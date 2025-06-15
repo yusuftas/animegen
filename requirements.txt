@@ -1,6 +1,6 @@
 # Core video processing
 opencv-python>=4.8.0
-moviepy>=1.0.3
+moviepy>=1.0.3, < 2
 pydub>=0.25.1
 
 # ML and AI
@@ -36,6 +36,11 @@ flask>=2.3.0
 
 # Image processing
 Pillow>=10.0.0
+scikit-image>=0.21.0
+
+# Video effects performance optimization
+imageio-ffmpeg>=0.4.7
+numba>=0.57.0
 
 # Progress bars
 tqdm>=4.65.0

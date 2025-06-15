@@ -275,87 +275,453 @@ class FactIntegrator:
 
 ---
 
-## Phase 5: Video Assembly Engine (Weeks 9-10)
+## Phase 5: Advanced Video Effects System (Weeks 9-10)
 
 ### Objectives:
-- Build dynamic video editing system
-- Implement visual effects library
-- Create anti-template mechanisms
+- Build comprehensive anime-style visual effects library
+- Implement motion and impact effects
+- Create audio-visual synchronization system
+- Develop dynamic color grading and lighting effects
 
 ### Tasks:
 
-**5.1 Advanced Video Editor**
+**5.1 Motion and Impact Effects Engine**
 ```python
+import cv2
+import numpy as np
 from moviepy.editor import *
-import random
 
-class DynamicVideoEditor:
+class MotionEffectsEngine:
     def __init__(self):
-        self.transitions = self.load_transitions()
-        self.effects = self.load_effects()
-        self.overlays = self.load_overlays()
+        self.effects_cache = {}
         
-    def create_short(self, clips, script, style):
-        # Randomly select editing approach
-        edit_pattern = random.choice(self.edit_patterns[style])
+    def speed_ramp_effect(self, clip, speed_points):
+        """Dynamic speed ramping for dramatic emphasis"""
+        segments = []
+        for i in range(len(speed_points) - 1):
+            start_time, start_speed = speed_points[i]
+            end_time, end_speed = speed_points[i + 1]
+            
+            segment = clip.subclip(start_time, end_time)
+            avg_speed = (start_speed + end_speed) / 2
+            segment = segment.fx(speedx, avg_speed)
+            segments.append(segment)
         
-        # Apply unique composition
-        video = self.compose_video(clips, edit_pattern)
+        return concatenate_videoclips(segments)
+    
+    def zoom_punch_effect(self, clip, zoom_time, zoom_factor=1.5, duration=0.2):
+        """Rapid zoom-in synchronized with impact moments"""
+        def zoom_func(get_frame, t):
+            frame = get_frame(t)
+            if abs(t - zoom_time) < duration/2:
+                intensity = 1 - abs(t - zoom_time) / (duration/2)
+                current_zoom = 1 + (zoom_factor - 1) * intensity
+                
+                h, w = frame.shape[:2]
+                center_x, center_y = w//2, h//2
+                
+                # Add camera shake
+                shake_x = int(np.random.uniform(-5, 5) * intensity)
+                shake_y = int(np.random.uniform(-5, 5) * intensity)
+                
+                M = cv2.getRotationMatrix2D(
+                    (center_x + shake_x, center_y + shake_y), 0, current_zoom
+                )
+                
+                return cv2.warpAffine(frame, M, (w, h))
+            return frame
         
-        # Add dynamic elements
-        video = self.add_overlays(video, style)
-        video = self.add_transitions(video)
+        return clip.fl(zoom_func)
+    
+    def camera_shake_effect(self, clip, shake_intensity=10, shake_duration=1.0):
+        """Simulate camera movement for impact and excitement"""
+        def shake_func(get_frame, t):
+            frame = get_frame(t)
+            if t < shake_duration:
+                current_intensity = shake_intensity * np.exp(-t * 3)
+                
+                dx = int(np.random.uniform(-current_intensity, current_intensity))
+                dy = int(np.random.uniform(-current_intensity, current_intensity))
+                
+                h, w = frame.shape[:2]
+                M = np.float32([[1, 0, dx], [0, 1, dy]])
+                
+                return cv2.warpAffine(frame, M, (w, h), borderMode=cv2.BORDER_REFLECT)
+            return frame
         
-        # Add commentary
-        video = self.add_voiceover(video, script)
-        
-        return self.finalize_video(video)
+        return clip.fl(shake_func)
 ```
 
-**5.2 Visual Effects Library**
+**5.2 Anime-Style Visual Effects**
 ```python
-class VisualEffectsLibrary:
+class AnimeEffectsLibrary:
     def __init__(self):
-        self.effects = {
-            'zoom_types': ['smooth', 'punch', 'elastic'],
-            'transitions': ['cut', 'fade', 'wipe', 'anime_style'],
-            'overlays': ['speed_lines', 'impact_frames', 'emotion_bubbles'],
-            'filters': ['vintage', 'high_contrast', 'anime_glow']
-        }
+        self.effect_templates = self.load_effect_templates()
         
-    def apply_random_effects(self, clip):
-        # Apply 2-3 effects randomly
-        selected_effects = random.sample(self.effects, k=2)
-        return self.apply_effects(clip, selected_effects)
+    def add_speed_lines(self, frame, direction="right", intensity=0.8, color=(255, 255, 255)):
+        """Add anime-style motion lines"""
+        h, w = frame.shape[:2]
+        overlay = np.zeros_like(frame)
+        
+        num_lines = int(20 * intensity)
+        
+        for i in range(num_lines):
+            if direction == "right":
+                y = np.random.randint(0, h)
+                thickness = np.random.randint(1, 4)
+                length = np.random.randint(w//4, w//2)
+                x_start = np.random.randint(0, w - length)
+                
+                cv2.line(overlay, (x_start, y), (x_start + length, y), 
+                        color, thickness)
+            elif direction == "radial":
+                center_x, center_y = w//2, h//2
+                angle = np.random.uniform(0, 2*np.pi)
+                length = np.random.randint(50, min(w, h)//4)
+                
+                end_x = int(center_x + length * np.cos(angle))
+                end_y = int(center_y + length * np.sin(angle))
+                
+                cv2.line(overlay, (center_x, center_y), (end_x, end_y), 
+                        color, 2)
+        
+        alpha = 0.7
+        return cv2.addWeighted(frame, 1-alpha, overlay, alpha, 0)
+    
+    def create_impact_frame(self, frame, style="manga"):
+        """Create high-contrast impact frames"""
+        if style == "manga":
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+            
+            bordered = cv2.copyMakeBorder(thresh, 10, 10, 10, 10, 
+                                        cv2.BORDER_CONSTANT, value=0)
+            
+            impact_frame = cv2.cvtColor(bordered, cv2.COLOR_GRAY2BGR)
+            impact_frame[:, :, 2] = np.maximum(impact_frame[:, :, 2], 100)
+            
+            return impact_frame
+        
+        elif style == "energy":
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 2, 0, 255)
+            hsv[:, :, 2] = np.clip(hsv[:, :, 2] * 1.3, 0, 255)
+            
+            return cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    
+    def energy_aura_effect(self, clip, start_time, duration, intensity=1.0):
+        """Add pulsing energy aura around characters"""
+        def aura_func(get_frame, t):
+            frame = get_frame(t)
+            if start_time <= t <= start_time + duration:
+                pulse = (np.sin((t - start_time) * 6) + 1) / 2
+                current_intensity = intensity * pulse
+                
+                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                hsv[:, :, 2] = np.clip(hsv[:, :, 2] * (1 + current_intensity * 0.5), 0, 255)
+                
+                energy_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+                
+                if current_intensity > 0.5:
+                    return self.create_character_glow(energy_frame)
+                
+                return energy_frame
+            return frame
+        
+        return clip.fl(aura_func)
 ```
 
-**5.3 Text and Typography System**
+**5.3 Dynamic Color Grading and Lighting**
 ```python
-class DynamicTextSystem:
+class ColorEffectsEngine:
     def __init__(self):
-        self.fonts = self.load_anime_fonts()
-        self.animations = self.load_text_animations()
+        self.color_profiles = self.load_color_profiles()
         
-    def add_dynamic_text(self, video, text, timestamp):
-        # Randomize position
-        position = self.calculate_position(video.size)
+    def anime_color_grade(self, frame, style="vibrant"):
+        """Apply anime-style color grading"""
+        if style == "vibrant":
+            lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+            l = clahe.apply(l)
+            
+            a = cv2.multiply(a, 1.2)
+            b = cv2.multiply(b, 1.2)
+            
+            enhanced = cv2.merge([l, a, b])
+            return cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
         
-        # Select random font and style
-        font = random.choice(self.fonts)
-        animation = random.choice(self.animations)
+        elif style == "sunset":
+            frame_float = frame.astype(np.float32) / 255.0
+            
+            warm_matrix = np.array([
+                [1.2, 0.1, 0.0],
+                [0.1, 1.0, 0.0],
+                [0.0, 0.0, 0.8]
+            ])
+            
+            for i in range(3):
+                frame_float[:,:,i] = np.clip(
+                    frame_float[:,:,0] * warm_matrix[i,0] +
+                    frame_float[:,:,1] * warm_matrix[i,1] +
+                    frame_float[:,:,2] * warm_matrix[i,2], 0, 1
+                )
+            
+            return (frame_float * 255).astype(np.uint8)
+    
+    def chromatic_aberration_effect(self, frame, intensity=5):
+        """Simulate chromatic aberration for retro effects"""
+        h, w = frame.shape[:2]
+        b, g, r = cv2.split(frame)
         
-        return self.animate_text(video, text, position, font, animation)
+        offset_r = np.float32([[1, 0, intensity], [0, 1, 0]])
+        offset_b = np.float32([[1, 0, -intensity], [0, 1, 0]])
+        
+        r_shifted = cv2.warpAffine(r, offset_r, (w, h), borderMode=cv2.BORDER_REFLECT)
+        b_shifted = cv2.warpAffine(b, offset_b, (w, h), borderMode=cv2.BORDER_REFLECT)
+        
+        return cv2.merge([b_shifted, g, r_shifted])
+    
+    def vintage_vhs_effect(self, frame):
+        """Create VHS-style vintage effect"""
+        noise = np.random.randint(0, 25, frame.shape, dtype=np.uint8)
+        noisy_frame = cv2.add(frame, noise)
+        
+        h, w = frame.shape[:2]
+        for y in range(0, h, 4):
+            noisy_frame[y:y+1, :] = noisy_frame[y:y+1, :] * 0.8
+        
+        aberrated = self.chromatic_aberration_effect(noisy_frame, 3)
+        
+        return cv2.GaussianBlur(aberrated, (3, 3), 0)
 ```
+
+**5.4 Advanced Text and Typography Effects**
+```python
+class TextEffectsEngine:
+    def __init__(self):
+        self.anime_fonts = self.load_anime_fonts()
+        self.text_animations = self.load_text_animations()
+        
+    def create_animated_text(self, text, duration, animation="slide_in", fontsize=50):
+        """Create animated text overlays"""
+        if animation == "slide_in":
+            def text_position(t):
+                if t < 0.5:
+                    progress = t / 0.5
+                    x = int(800 * (1 - progress))
+                    return (x, 100)
+                else:
+                    return (50, 100)
+            
+            text_clip = TextClip(text, fontsize=fontsize, color='white', 
+                               stroke_color='black', stroke_width=2)
+            return text_clip.set_position(text_position).set_duration(duration)
+        
+        elif animation == "typewriter":
+            clips = []
+            chars_per_second = 10
+            
+            for i in range(1, len(text) + 1):
+                partial_text = text[:i]
+                start_time = (i - 1) / chars_per_second
+                duration_part = 1 / chars_per_second
+                
+                text_part = TextClip(partial_text, fontsize=fontsize, color='white')
+                text_part = text_part.set_start(start_time).set_duration(duration_part)
+                clips.append(text_part)
+            
+            return CompositeVideoClip(clips).set_duration(duration)
+    
+    def sound_effect_text(self, text, position, style="impact"):
+        """Create sound effect text overlay"""
+        if style == "impact":
+            text_clip = TextClip(text, fontsize=80, color='yellow', 
+                               font='Arial-Bold', stroke_color='red', stroke_width=3)
+            
+            def scale_func(t):
+                if t < 0.2:
+                    return 1 + (1.5 - 1) * (t / 0.2)
+                elif t < 0.4:
+                    return 1.5 - (1.5 - 1) * ((t - 0.2) / 0.2)
+                else:
+                    return 1
+            
+            return text_clip.resize(scale_func).set_position(position).set_duration(0.6)
+```
+
+**5.5 Audio-Visual Synchronization System**
+```python
+import librosa
+
+class AudioSyncEngine:
+    def __init__(self):
+        self.beat_cache = {}
+        
+    def extract_beats(self, audio_path):
+        """Extract beat timestamps from audio"""
+        if audio_path in self.beat_cache:
+            return self.beat_cache[audio_path]
+        
+        y, sr = librosa.load(audio_path)
+        tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+        beat_times = librosa.frames_to_time(beats, sr=sr)
+        
+        self.beat_cache[audio_path] = (beat_times, tempo)
+        return beat_times, tempo
+    
+    def sync_effects_to_beats(self, clip, audio_path, effect_func):
+        """Synchronize visual effects to audio beats"""
+        beat_times, tempo = self.extract_beats(audio_path)
+        
+        effects_clip = clip
+        for beat_time in beat_times:
+            effects_clip = effect_func(effects_clip, beat_time)
+        
+        return effects_clip
+    
+    def create_beat_flash(self, clip, beat_time, intensity=0.5):
+        """Create flash effect synchronized to beat"""
+        def flash_func(get_frame, t):
+            frame = get_frame(t)
+            if abs(t - beat_time) < 0.1:
+                flash_intensity = intensity * (1 - abs(t - beat_time) / 0.1)
+                white_overlay = np.ones_like(frame) * 255
+                return cv2.addWeighted(frame, 1 - flash_intensity, 
+                                     white_overlay, flash_intensity, 0)
+            return frame
+        
+        return clip.fl(flash_func)
+```
+
+**5.6 Advanced Transition System**
+```python
+class TransitionEngine:
+    def __init__(self):
+        self.transition_templates = self.load_transition_templates()
+        
+    def iris_transition(self, clip1, clip2, duration=1.0):
+        """Create iris transition between clips"""
+        def iris_mask(t):
+            if t < duration:
+                progress = t / duration
+                h, w = clip1.size[1], clip1.size[0]
+                
+                mask = np.zeros((h, w), dtype=np.uint8)
+                center = (w//2, h//2)
+                radius = int(min(w, h) * progress * 0.7)
+                
+                cv2.circle(mask, center, radius, 255, -1)
+                return mask
+            return None
+        
+        masked_clip2 = clip2.fl(lambda gf, t: cv2.bitwise_and(gf(t), gf(t), mask=iris_mask(t)) 
+                               if iris_mask(t) is not None else gf(t))
+        
+        return CompositeVideoClip([clip1, masked_clip2.set_start(0)])
+    
+    def swipe_transition(self, clip1, clip2, direction="left", duration=0.5):
+        """Create swipe transition"""
+        w, h = clip1.size
+        
+        def mask_func(t):
+            if t < duration:
+                progress = t / duration
+                if direction == "left":
+                    x_boundary = int(w * progress)
+                    mask = np.zeros((h, w), dtype=np.uint8)
+                    mask[:, :x_boundary] = 255
+                    return mask
+            return np.ones((h, w), dtype=np.uint8) * 255
+        
+        masked_clip2 = clip2.fl(lambda gf, t: cv2.bitwise_and(gf(t), gf(t), mask=mask_func(t)))
+        
+        return CompositeVideoClip([clip1, masked_clip2])
+```
+
+### Testing:
+- Test all effects with various anime styles
+- Validate performance impact of effects
+- A/B test effect combinations for engagement
+- Optimize effect rendering for real-time processing
 
 ### Deliverables:
-- Complete video editing system
-- 50+ visual effect variations
-- Dynamic text system
-- Anti-pattern randomization
+- Motion and impact effects engine (speed ramping, zoom punch, camera shake)
+- Anime-style visual effects library (speed lines, impact frames, energy auras)
+- Dynamic color grading and lighting system
+- Advanced text and typography effects
+- Audio-visual synchronization engine
+- Comprehensive transition system
+- Performance-optimized effects pipeline
+- 50+ unique visual effect variations
 
 ---
 
-## Phase 6: Audio & Voice System (Weeks 11-12)
+## Phase 6: Video Assembly Engine (Weeks 11-12)
+
+### Objectives:
+- Build dynamic video editing system integrating all effects
+- Implement advanced composition and layering
+- Create anti-template mechanisms
+- Optimize rendering pipeline
+
+### Tasks:
+
+**6.1 Integrated Video Compositor**
+```python
+from src.video_effects import *
+
+class DynamicVideoCompositor:
+    def __init__(self):
+        self.motion_fx = MotionEffectsEngine()
+        self.anime_fx = AnimeEffectsLibrary()
+        self.color_fx = ColorEffectsEngine()
+        self.text_fx = TextEffectsEngine()
+        self.audio_sync = AudioSyncEngine()
+        self.transitions = TransitionEngine()
+        
+    def create_enhanced_short(self, clips, script, style, audio_path=None):
+        """Create anime short with comprehensive effects"""
+        # Apply scene-specific effects
+        enhanced_clips = []
+        for i, clip in enumerate(clips):
+            scene_type = self.classify_scene_type(clip)
+            
+            # Apply appropriate effects based on scene type
+            if scene_type == 'action':
+                clip = self.apply_action_effects(clip)
+            elif scene_type == 'emotional':
+                clip = self.apply_emotional_effects(clip)
+            elif scene_type == 'comedy':
+                clip = self.apply_comedy_effects(clip)
+                
+            enhanced_clips.append(clip)
+        
+        # Create dynamic transitions
+        composite_clip = self.create_dynamic_composition(enhanced_clips)
+        
+        # Add text overlays
+        composite_clip = self.add_contextual_text(composite_clip, script)
+        
+        # Sync to audio if provided
+        if audio_path:
+            composite_clip = self.audio_sync.sync_effects_to_beats(
+                composite_clip, audio_path, self.create_beat_flash
+            )
+        
+        return self.finalize_composition(composite_clip)
+```
+
+### Deliverables:
+- Integrated video composition system
+- Dynamic effect application engine
+- Advanced layering and masking
+- Optimized rendering pipeline
+
+---
+
+## Phase 7: Audio & Voice System (Weeks 13-14)
 
 ### Objectives:
 - Implement multi-voice TTS system
@@ -421,7 +787,7 @@ class AudioMixer:
 
 ---
 
-## Phase 7: Automation Pipeline (Weeks 13-14)
+## Phase 8: Automation Pipeline (Weeks 15-16)
 
 ### Objectives:
 - Build end-to-end automation
@@ -505,7 +871,7 @@ class BatchProcessor:
 
 ---
 
-## Phase 8: YouTube Integration (Weeks 15-16)
+## Phase 9: YouTube Integration (Weeks 17-18)
 
 ### Objectives:
 - Implement YouTube API integration
@@ -606,7 +972,7 @@ class ThumbnailGenerator:
 
 ---
 
-## Phase 9: Analytics & Optimization (Weeks 17-18)
+## Phase 10: Analytics & Optimization (Weeks 19-20)
 
 ### Objectives:
 - Build performance tracking
@@ -684,7 +1050,7 @@ class AdaptiveStrategy:
 
 ---
 
-## Phase 10: Scaling & Maintenance (Weeks 19-20)
+## Phase 11: Scaling & Maintenance (Weeks 21-22)
 
 ### Objectives:
 - Implement cloud deployment
@@ -763,7 +1129,7 @@ class ContinuousImprovement:
 
 ---
 
-## Final Testing & Launch (Week 21)
+## Final Testing & Launch (Week 23)
 
 ### Pre-Launch Checklist:
 - [ ] Process 100+ anime episodes successfully
