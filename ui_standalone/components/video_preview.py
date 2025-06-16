@@ -575,7 +575,9 @@ class VideoPreviewPanel:
             import cv2
             from PIL import Image, ImageTk
             
-            cap = cv2.VideoCapture(self.current_video_path)
+            # Use preview video if available, otherwise use original
+            video_path = self.preview_video_path if self.preview_video_path else self.current_video_path
+            cap = cv2.VideoCapture(video_path)
             
             # Set frame position
             frame_number = int(time_seconds * self.video_fps)
@@ -755,6 +757,10 @@ class VideoPreviewPanel:
             )
             
             self.status_label.configure(text="Preview updated with effects")
+            
+            # Refresh the currently displayed frame to show effects
+            if self.video_canvas:
+                self.load_video_frame(self.current_time)
         else:
             messagebox.showerror("Preview Error", "Failed to generate preview")
     

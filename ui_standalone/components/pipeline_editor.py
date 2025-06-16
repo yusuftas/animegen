@@ -530,4 +530,6 @@ class PipelineEditorPanel:
         """Add effect to pipeline (called from main app)"""
         effect_id = self.pipeline.add_effect(effect_type, effect_name)
         self.refresh_pipeline()
+        # Trigger preview update
+        self.on_pipeline_changed()
         return effect_id
