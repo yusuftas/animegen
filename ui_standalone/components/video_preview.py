@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 from PIL import Image, ImageTk
 import cv2
+from .export_dialog import ExportDialog
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -33,11 +34,8 @@ class VideoPreviewPanel:
         self.video_duration = 0.0
         self.playback_thread = None
         
-        # Export settings
-        self.quality_var = tk.StringVar(value="1080p")
-        self.fps_var = tk.StringVar(value="60fps")
-        self.format_var = tk.StringVar(value="MP4")
-        self.codec_var = tk.StringVar(value="H.264")
+        # Export dialog
+        self.export_dialog = None
         
         # Processing state
         self.is_processing = False
@@ -349,77 +347,17 @@ class VideoPreviewPanel:
         )
         export_header.pack(pady=5)
         
-        # Export settings grid
-        settings_frame = ctk.CTkFrame(export_container)
-        settings_frame.pack(fill="x", padx=10, pady=5)
-        
-        # Quality setting
-        quality_frame = ctk.CTkFrame(settings_frame)
-        quality_frame.pack(side="left", padx=5, fill="x", expand=True)
-        
-        ctk.CTkLabel(quality_frame, text="Quality:", font=ctk.CTkFont(size=11)).pack()
-        
-        quality_combo = ctk.CTkComboBox(
-            quality_frame,
-            variable=self.quality_var,
-            values=["720p", "1080p", "1440p", "4K"],
-            width=80
-        )
-        quality_combo.pack(pady=2)
-        
-        # FPS setting
-        fps_frame = ctk.CTkFrame(settings_frame)
-        fps_frame.pack(side="left", padx=5, fill="x", expand=True)
-        
-        ctk.CTkLabel(fps_frame, text="FPS:", font=ctk.CTkFont(size=11)).pack()
-        
-        fps_combo = ctk.CTkComboBox(
-            fps_frame,
-            variable=self.fps_var,
-            values=["24fps", "30fps", "60fps"],
-            width=80
-        )
-        fps_combo.pack(pady=2)
-        
-        # Format setting
-        format_frame = ctk.CTkFrame(settings_frame)
-        format_frame.pack(side="left", padx=5, fill="x", expand=True)
-        
-        ctk.CTkLabel(format_frame, text="Format:", font=ctk.CTkFont(size=11)).pack()
-        
-        format_combo = ctk.CTkComboBox(
-            format_frame,
-            variable=self.format_var,
-            values=["MP4", "AVI", "MOV"],
-            width=80
-        )
-        format_combo.pack(pady=2)
-        
-        # Codec setting
-        codec_frame = ctk.CTkFrame(settings_frame)
-        codec_frame.pack(side="left", padx=5, fill="x", expand=True)
-        
-        ctk.CTkLabel(codec_frame, text="Codec:", font=ctk.CTkFont(size=11)).pack()
-        
-        codec_combo = ctk.CTkComboBox(
-            codec_frame,
-            variable=self.codec_var,
-            values=["H.264", "H.265", "VP9"],
-            width=80
-        )
-        codec_combo.pack(pady=2)
-        
-        # Export button
+        # Export button - opens dialog
         self.export_button = ctk.CTkButton(
             export_container,
             text="🎬 RENDER FINAL VIDEO",
-            command=self.on_export,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            command=self.show_export_dialog,
+            height=50,
+            font=ctk.CTkFont(size=16, weight="bold"),
             fg_color="green",
             hover_color="darkgreen"
         )
-        self.export_button.pack(pady=10)
+        self.export_button.pack(pady=15)
         
         # Export progress
         self.export_progress_frame = ctk.CTkFrame(export_container)
@@ -436,6 +374,21 @@ class VideoPreviewPanel:
         
         # Initially hidden
         self.export_progress_frame.pack_forget()
+    
+    def show_export_dialog(self):
+        """Show the export dialog"""
+        if not self.export_dialog:
+            self.export_dialog = ExportDialog(self.panel, self.handle_export_request)
+        self.export_dialog.show_dialog()
+    
+    def handle_export_request(self, export_settings):
+        """Handle export request from dialog"""
+        # Store export settings for the actual export process
+        self.current_export_settings = export_settings
+        
+        # Call the original export callback with the settings
+        if self.on_export:
+            self.on_export(export_settings)
     
     def create_presets_section(self):
         """Create presets section"""
@@ -825,20 +778,43 @@ class VideoPreviewPanel:
         self.export_progress_frame.pack_forget()
         self.export_button.configure(state="normal", text="🎬 RENDER FINAL VIDEO")
     
-    def update_export_progress(self, progress: float):
+    def update_export_progress(self, progress: float, status: str = ""):
         """Update export progress"""
         self.export_progress = progress
-        self.export_progress_bar.set(progress / 100.0)
-        self.export_progress_label.configure(text=f"Exporting... {progress:.1f}%")
+        
+        # Update local progress bar if visible
+        if hasattr(self, 'export_progress_bar'):
+            self.export_progress_bar.set(progress / 100.0)
+            self.export_progress_label.configure(text=f"Exporting... {progress:.1f}%")
+        
+        # Update export dialog progress if it exists
+        if self.export_dialog:
+            self.export_dialog.update_progress(progress, status)
+    
+    def export_completed(self, success: bool = True):
+        """Handle export completion"""
+        # Update local UI
+        self.hide_export_progress()
+        
+        # Update export dialog if it exists
+        if self.export_dialog:
+            self.export_dialog.export_completed(success)
     
     def get_export_settings(self) -> Dict[str, Any]:
         """Get current export settings"""
-        return {
-            "quality": self.quality_var.get(),
-            "fps": self.fps_var.get(),
-            "format": self.format_var.get(),
-            "codec": self.codec_var.get()
-        }
+        if hasattr(self, 'current_export_settings'):
+            return self.current_export_settings
+        else:
+            # Default settings if no export dialog has been used yet
+            return {
+                "quality": "1080p",
+                "fps": "30fps", 
+                "format": "MP4",
+                "codec": "H.264",
+                "output_path": "",
+                "bitrate": "Auto",
+                "audio": "AAC"
+            }
     
     def apply_preset(self, preset_name: str):
         """Apply a preset (to be connected to main app)"""
