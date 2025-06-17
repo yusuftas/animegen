@@ -33,10 +33,20 @@ class AnimeEffectsStudio:
         # Initialize main window
         self.root = ctk.CTk()
         self.root.title("Anime Effects Studio - Video Effects Pipeline")
-        self.root.geometry("1600x900")
-        self.root.minsize(1200, 700)
-        # self.root.geometry("1800x1000")  # Larger default size for better preview
-        # self.root.minsize(1400, 800)   # Higher minimum size
+        
+        # Start maximized (cross-platform)
+        try:
+            # Try Windows/tkinter method first
+            self.root.state('zoomed')
+        except:
+            try:
+                # Try Linux method
+                self.root.attributes('-zoomed', True)
+            except:
+                # Fallback: maximize manually
+                self.root.geometry(f"{self.root.winfo_screenwidth()}x{self.root.winfo_screenheight()}+0+0")
+        
+        self.root.minsize(1200, 700)  # Minimum size when not maximized
         
         # Initialize data models
         self.effect_pipeline = EffectPipeline()
