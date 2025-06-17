@@ -158,13 +158,20 @@ class EffectsLibraryPanel:
         
     def create_tooltip(self, widget, text):
         """Create tooltip for widget"""
+        # Store tooltip reference on the widget itself
+        widget.tooltip = None
+        
         def show_tooltip(event):
-            tooltip = tk.Toplevel()
-            tooltip.wm_overrideredirect(True)
-            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            # Don't create new tooltip if one already exists
+            if widget.tooltip is not None:
+                return
+                
+            widget.tooltip = tk.Toplevel()
+            widget.tooltip.wm_overrideredirect(True)
+            widget.tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
             
             label = tk.Label(
-                tooltip,
+                widget.tooltip,
                 text=text,
                 background="lightyellow",
                 relief="solid",
@@ -173,11 +180,11 @@ class EffectsLibraryPanel:
             )
             label.pack()
             
-            # Auto-hide after 3 seconds
-            tooltip.after(3000, tooltip.destroy)
-            
         def hide_tooltip(event):
-            pass
+            # Destroy tooltip if it exists
+            if widget.tooltip is not None:
+                widget.tooltip.destroy()
+                widget.tooltip = None
             
         widget.bind("<Enter>", show_tooltip)
         widget.bind("<Leave>", hide_tooltip)
