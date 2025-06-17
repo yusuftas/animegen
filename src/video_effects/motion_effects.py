@@ -230,7 +230,7 @@ class MotionEffectsEngine:
                 blurred = cv2.filter2D(frame, -1, kernel)
                 return blurred
             
-            result = clip.fl_image(blur_func)
+            result = clip.fl(blur_func)
             logger.info(f"Applied motion blur with strength {blur_strength} at angle {motion_angle}°")
             return result
             
