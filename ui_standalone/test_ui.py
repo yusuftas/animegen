@@ -34,10 +34,10 @@ def test_imports():
         return False
     
     try:
-        from ui_standalone.models.effect_models import EffectFactory
-        print("✅ effect_models imported successfully")
+        from ui_standalone.models.effect_adapter import ProductionEffectFactory
+        print("✅ effect_adapter imported successfully")
     except ImportError as e:
-        print(f"❌ effect_models import failed: {e}")
+        print(f"❌ effect_adapter import failed: {e}")
         return False
     
     try:
@@ -75,18 +75,17 @@ def test_effect_factory():
     print("\nTesting effect factory...")
     
     try:
-        from ui_standalone.models.effect_models import EffectFactory
-        
-        # Test getting available effects
-        effects = EffectFactory.get_available_effects()
+        from ui_standalone.models.effect_adapter import ProductionEffectFactory
+        # Test getting available effects from production system
+        effects = ProductionEffectFactory.get_available_effects()
         print(f"✅ Found {len(effects)} effect categories")
         
         for category, effect_list in effects.items():
             print(f"   {category}: {len(effect_list)} effects")
         
-        # Test creating an effect
-        effect = EffectFactory.create_effect("speed_lines")
-        print(f"✅ Created effect: {effect.name}")
+        # Test creating a production effect
+        effect = ProductionEffectFactory.create_effect("anime_speed_lines")
+        print(f"✅ Created production effect: {effect.name}")
         
         return True
         

@@ -13,7 +13,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from ui_standalone.models.effect_models import EffectFactory, EffectCategory
+from ui_standalone.models.effect_models import EffectCategory
 from ui_standalone.models.effect_adapter import ProductionEffectFactory
 
 class EffectsLibraryPanel:
@@ -23,20 +23,8 @@ class EffectsLibraryPanel:
         self.parent = parent
         self.on_effect_selected = on_effect_selected
         
-        # Get available effects from production engines + legacy
-        self.production_effects = ProductionEffectFactory.get_available_effects()
-        self.legacy_effects = EffectFactory.get_available_effects()
-        
-        # Merge effects (production takes priority)
-        self.available_effects = self.production_effects.copy()
-        for category, effects in self.legacy_effects.items():
-            if category not in self.available_effects:
-                self.available_effects[category] = []
-            # Add legacy effects that aren't already in production
-            for effect in effects:
-                effect_names = [e.get('name', e.get('type', '')) for e in self.available_effects[category]]
-                if effect['name'] not in effect_names:
-                    self.available_effects[category].append(effect)
+        # Get available effects from production engines
+        self.available_effects = ProductionEffectFactory.get_available_effects()
         
         # Create main panel
         self.panel = None
@@ -327,7 +315,7 @@ class EffectsLibraryPanel:
     
     def refresh_library(self):
         """Refresh the effects library (useful after updates)"""
-        self.available_effects = EffectFactory.get_available_effects()
+        self.available_effects = ProductionEffectFactory.get_available_effects()
         
         # Clear existing content
         for widget in self.scrollable_frame.winfo_children():

@@ -5,7 +5,7 @@ Effect Pipeline - Data model for managing the video effects pipeline
 import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
-from .effect_models import BaseEffect, EffectFactory, EffectCategory
+from .effect_models import BaseEffect, EffectCategory
 from .effect_adapter import ProductionEffectFactory
 
 @dataclass
@@ -19,12 +19,8 @@ class EffectPipeline:
     def add_effect(self, effect_type: str, effect_name: str = None, position: Optional[int] = None) -> str:
         """Add an effect to the pipeline"""
         try:
-            # Try ProductionEffectFactory first, fallback to legacy EffectFactory
-            try:
-                effect = ProductionEffectFactory.create_effect(effect_type)
-            except (ValueError, KeyError):
-                # Fallback to legacy factory for backwards compatibility
-                effect = EffectFactory.create_effect(effect_type)
+            # Use ProductionEffectFactory for all effects
+            effect = ProductionEffectFactory.create_effect(effect_type)
             
             if effect_name:
                 effect.name = effect_name
@@ -97,12 +93,8 @@ class EffectPipeline:
         if not effect:
             return None
         
-        # Create a new effect of the same type
-        try:
-            new_effect = ProductionEffectFactory.create_effect(effect.__class__.__name__.replace('Effect', '').lower())
-        except (ValueError, KeyError):
-            # Fallback to legacy factory
-            new_effect = EffectFactory.create_effect(effect.__class__.__name__.replace('Effect', '').lower())
+        # Create a new effect of the same type using ProductionEffectFactory
+        new_effect = ProductionEffectFactory.create_effect(effect.__class__.__name__.replace('Effect', '').lower())
         
         # Copy parameters
         for param_name, param in effect.parameters.items():

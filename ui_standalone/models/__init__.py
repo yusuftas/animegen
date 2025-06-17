@@ -4,7 +4,7 @@ Data models for the standalone UI
 
 from .effect_models import (
     EffectCategory, AnimationType, ColorGradingStyle, TransitionType,
-    EffectParameter, BaseEffect, EffectFactory,
+    EffectParameter, BaseEffect,
     SpeedRampEffect, ZoomPunchEffect, CameraShakeEffect,
     SpeedLinesEffect, ImpactFrameEffect, EnergyAuraEffect,
     ColorGradeEffect, ChromaticAberrationEffect, BloomEffect,
@@ -20,7 +20,7 @@ __all__ = [
     'EffectCategory', 'AnimationType', 'ColorGradingStyle', 'TransitionType',
     
     # Base classes
-    'EffectParameter', 'BaseEffect', 'EffectFactory',
+    'EffectParameter', 'BaseEffect',
     
     # Motion Effects
     'SpeedRampEffect', 'ZoomPunchEffect', 'CameraShakeEffect',

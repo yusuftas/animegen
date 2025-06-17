@@ -14,7 +14,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from ui_standalone.models.effect_pipeline import EffectPipeline
-from ui_standalone.models.effect_models import BaseEffect, EffectFactory
+from ui_standalone.models.effect_models import BaseEffect
 from ui_standalone.models.effect_adapter import ProductionEffectFactory, ProductionEffect
 
 class EffectItem:
