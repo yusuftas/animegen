@@ -133,9 +133,16 @@ class EffectEngineRegistry:
         
         # Anime Effects - use actual method names from AnimeEffectsLibrary
         anime_effects = {
+            # Clip-level effects (work with VideoFileClip)
             'speed_lines': {'method': 'speed_lines_clip', 'params': {'direction': 'right', 'start_time': 0, 'duration': 0.5, 'intensity': 0.8}},
             'impact_frame': {'method': 'add_impact_frames', 'params': {'impact_times': [1.0], 'duration': 0.1, 'style': 'manga'}},
-            'energy_aura': {'method': 'energy_aura_effect', 'params': {'start_time': 0, 'duration': 2.0, 'intensity': 1.0, 'pulse_rate': 6.0}}
+            'energy_aura': {'method': 'energy_aura_effect', 'params': {'start_time': 0, 'duration': 2.0, 'intensity': 1.0, 'pulse_rate': 6.0}},
+            
+            # Frame-level effects (work with numpy arrays)
+            'speed_lines_frame': {'method': 'add_speed_lines', 'params': {'direction': 'right', 'intensity': 0.8}, 'frame_level': True},
+            'impact_frame_direct': {'method': 'create_impact_frame', 'params': {'style': 'manga'}, 'frame_level': True},
+            'character_glow': {'method': 'create_character_glow', 'params': {'color': (255, 255, 255), 'intensity': 1.0}, 'frame_level': True},
+            'action_lines': {'method': 'add_action_lines', 'params': {'direction': 'converging', 'intensity': 0.8}, 'frame_level': True}
         }
         
         for effect_name, effect_info in anime_effects.items():
@@ -143,7 +150,8 @@ class EffectEngineRegistry:
                 'engine': 'anime',
                 'method': effect_info['method'],
                 'category': EffectCategory.ANIME,
-                'preset_config': effect_info['params']
+                'preset_config': effect_info['params'],
+                'frame_level': effect_info.get('frame_level', False)
             }
         
         # Color Effects - use actual method names from ColorEffectsEngine  
@@ -324,7 +332,7 @@ class ProductionEffectFactory:
     
     @classmethod
     def apply_effect_to_clip(cls, clip, effect: ProductionEffect):
-        """Apply production effect to video clip"""
+        """Apply production effect to video clip with unified interface"""
         engine = effect.get_engine_instance()
         if not engine or not effect.engine_method:
             raise ValueError(f"Cannot apply effect {effect.name}: missing engine or method")
@@ -338,75 +346,118 @@ class ProductionEffectFactory:
         config = effect.to_engine_config()
         
         # Get effect info from registry for special handling
-        effect_info = effect_registry.effect_registry.get(effect.name.lower().replace(' ', '_'), {})
+        effect_key = effect.name.lower().replace(' ', '_')
+        effect_info = effect_registry.effect_registry.get(effect_key, {})
         
-        # Apply effect based on engine pattern and method signature
+        # Apply effect with unified interface handling
         try:
-            if effect.category == EffectCategory.MOTION:
-                # Motion effects: clip + parameters
-                return method(clip, **config)
-            
-            elif effect.category == EffectCategory.ANIME:
-                # Anime effects: special handling for different methods
-                if effect.engine_method == 'speed_lines_clip':
-                    return method(clip, **config)
-                elif effect.engine_method == 'add_impact_frames':
-                    # Special handling for impact frames - needs impact_times as list
-                    impact_times = config.get('impact_times', [1.0])
-                    duration = config.get('duration', 0.1)
-                    style = config.get('style', 'manga')
-                    return method(clip, impact_times, duration, style)
-                elif effect.engine_method == 'energy_aura_effect':
-                    # Special handling for energy aura
-                    start_time = config.get('start_time', 0)
-                    duration = config.get('duration', 2.0)
-                    intensity = config.get('intensity', 1.0)
-                    pulse_rate = config.get('pulse_rate', 6.0)
-                    return method(clip, start_time, duration, intensity, pulse_rate)
-                else:
-                    return method(clip, **config)
-            
-            elif effect.category == EffectCategory.COLOR:
-                # Color effects: check if frame-level or clip-level
-                if effect_info.get('frame_level', False):
-                    # Frame-level effects need to be applied to each frame
-                    def apply_frame_effect(get_frame, t):
-                        frame = get_frame(t)
-                        return method(frame, **config)
-                    return clip.fl(apply_frame_effect)
-                else:
-                    # Clip-level effects
-                    return method(clip, **config)
-            
-            elif effect.category == EffectCategory.TEXT:
-                # Text effects create new clips, need composition
-                try:
-                    from moviepy.editor import CompositeVideoClip
-                    text_clip = method(**config)
-                    if hasattr(text_clip, 'set_duration'):
-                        text_clip = text_clip.set_duration(effect.duration or clip.duration)
-                    if hasattr(text_clip, 'set_start'):
-                        text_clip = text_clip.set_start(effect.start_time)
-                    return CompositeVideoClip([clip, text_clip])
-                except Exception as e:
-                    print(f"Text effect composition failed: {e}")
-                    return clip
-            
-            elif effect.category == EffectCategory.AUDIO_SYNC:
-                # Audio sync effects: clip + audio parameters
-                return method(clip, **config)
-            
-            elif effect.category == EffectCategory.TRANSITIONS:
-                # Transitions need two clips - use current clip as both for now
-                # In a full implementation, this would need the next clip in sequence
-                return method(clip, clip, **config)
-            
-            else:
-                # Default: try direct method call
-                return method(clip, **config)
+            return cls._apply_effect_with_unified_interface(clip, method, config, effect, effect_info)
                 
         except Exception as e:
             print(f"Error applying effect {effect.name}: {e}")
             import traceback
             traceback.print_exc()
             return clip  # Return original clip on error
+    
+    @classmethod
+    def _apply_effect_with_unified_interface(cls, clip, method, config, effect: ProductionEffect, effect_info: dict):
+        """Apply effect with proper interface handling for clips vs frames"""
+        
+        # Handle frame-level effects (expects numpy arrays)
+        if effect_info.get('frame_level', False):
+            return cls._apply_frame_level_effect(clip, method, config)
+        
+        # Handle special effect patterns by category
+        if effect.category == EffectCategory.MOTION:
+            return cls._apply_motion_effect(clip, method, config)
+        
+        elif effect.category == EffectCategory.ANIME:
+            return cls._apply_anime_effect(clip, method, config, effect)
+        
+        elif effect.category == EffectCategory.COLOR:
+            return cls._apply_color_effect(clip, method, config)
+        
+        elif effect.category == EffectCategory.TEXT:
+            return cls._apply_text_effect(clip, method, config, effect)
+        
+        elif effect.category == EffectCategory.AUDIO_SYNC:
+            return cls._apply_audio_sync_effect(clip, method, config)
+        
+        elif effect.category == EffectCategory.TRANSITIONS:
+            return cls._apply_transition_effect(clip, method, config)
+        
+        else:
+            # Default: try direct method call with clip
+            return method(clip, **config)
+    
+    @classmethod
+    def _apply_frame_level_effect(cls, clip, method, config):
+        """Apply effects that work on individual frames (numpy arrays)"""
+        def process_frame(get_frame, t):
+            # Get frame as numpy array
+            frame = get_frame(t)
+            # Apply frame-level effect
+            processed_frame = method(frame, **config)
+            return processed_frame
+        
+        return clip.fl(process_frame)
+    
+    @classmethod
+    def _apply_motion_effect(cls, clip, method, config):
+        """Apply motion effects (work with clips directly)"""
+        return method(clip, **config)
+    
+    @classmethod
+    def _apply_anime_effect(cls, clip, method, config, effect):
+        """Apply anime effects with special parameter handling"""
+        method_name = effect.engine_method
+        
+        if method_name == 'speed_lines_clip':
+            return method(clip, **config)
+        elif method_name == 'add_impact_frames':
+            # Special handling for impact frames - needs impact_times as list
+            impact_times = config.get('impact_times', [1.0])
+            duration = config.get('duration', 0.1)
+            style = config.get('style', 'manga')
+            return method(clip, impact_times, duration, style)
+        elif method_name == 'energy_aura_effect':
+            # Special handling for energy aura
+            start_time = config.get('start_time', 0)
+            duration = config.get('duration', 2.0)
+            intensity = config.get('intensity', 1.0)
+            pulse_rate = config.get('pulse_rate', 6.0)
+            return method(clip, start_time, duration, intensity, pulse_rate)
+        else:
+            return method(clip, **config)
+    
+    @classmethod
+    def _apply_color_effect(cls, clip, method, config):
+        """Apply color effects (mostly clip-level)"""
+        return method(clip, **config)
+    
+    @classmethod
+    def _apply_text_effect(cls, clip, method, config, effect):
+        """Apply text effects with composition"""
+        try:
+            from moviepy.editor import CompositeVideoClip
+            text_clip = method(**config)
+            if hasattr(text_clip, 'set_duration'):
+                text_clip = text_clip.set_duration(effect.duration or clip.duration)
+            if hasattr(text_clip, 'set_start'):
+                text_clip = text_clip.set_start(effect.start_time)
+            return CompositeVideoClip([clip, text_clip])
+        except Exception as e:
+            print(f"Text effect composition failed: {e}")
+            return clip
+    
+    @classmethod
+    def _apply_audio_sync_effect(cls, clip, method, config):
+        """Apply audio sync effects"""
+        return method(clip, **config)
+    
+    @classmethod
+    def _apply_transition_effect(cls, clip, method, config):
+        """Apply transition effects (need two clips)"""
+        # For now, use the same clip as both input and output
+        # In a full implementation, this would get the next clip in sequence
+        return method(clip, clip, **config)
