@@ -84,12 +84,6 @@ class VideoPreviewPanel:
         
         # Timeline
         self.create_timeline()
-        
-        # Export section
-        self.create_export_section()
-        
-        # Presets section
-        self.create_presets_section()
     
     def create_preview_area(self):
         """Create video preview display area"""
@@ -258,10 +252,24 @@ class VideoPreviewPanel:
         )
         self.time_label.pack(pady=8)
         
-        # Right side - volume control
+        # Right side - volume control and export
         right_controls = ctk.CTkFrame(playback_frame)
         right_controls.pack(side="right", padx=10)
         
+        # Export button
+        self.export_button = ctk.CTkButton(
+            right_controls,
+            text="🎬 Render",
+            command=self.show_export_dialog,
+            width=80,
+            height=35,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="green",
+            hover_color="darkgreen"
+        )
+        self.export_button.pack(side="left", padx=5)
+        
+        # Volume controls
         volume_label = ctk.CTkLabel(right_controls, text="🔊", font=ctk.CTkFont(size=14))
         volume_label.pack(side="left", padx=5)
         
@@ -334,46 +342,6 @@ class VideoPreviewPanel:
         )
         self.timeline_markers.pack(fill="x", padx=5, pady=2)
     
-    def create_export_section(self):
-        """Create export controls section"""
-        export_container = ctk.CTkFrame(self.panel)
-        export_container.pack(fill="x", padx=5, pady=5)
-        
-        # Export header
-        export_header = ctk.CTkLabel(
-            export_container,
-            text="📊 EXPORT SETTINGS",
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
-        export_header.pack(pady=5)
-        
-        # Export button - opens dialog
-        self.export_button = ctk.CTkButton(
-            export_container,
-            text="🎬 RENDER FINAL VIDEO",
-            command=self.show_export_dialog,
-            height=50,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            fg_color="green",
-            hover_color="darkgreen"
-        )
-        self.export_button.pack(pady=15)
-        
-        # Export progress
-        self.export_progress_frame = ctk.CTkFrame(export_container)
-        
-        self.export_progress_bar = ctk.CTkProgressBar(self.export_progress_frame)
-        self.export_progress_bar.pack(fill="x", padx=10, pady=5)
-        
-        self.export_progress_label = ctk.CTkLabel(
-            self.export_progress_frame,
-            text="Exporting... 0%",
-            font=ctk.CTkFont(size=12)
-        )
-        self.export_progress_label.pack(pady=2)
-        
-        # Initially hidden
-        self.export_progress_frame.pack_forget()
     
     def show_export_dialog(self):
         """Show the export dialog"""
@@ -390,87 +358,6 @@ class VideoPreviewPanel:
         if self.on_export:
             self.on_export(export_settings)
     
-    def create_presets_section(self):
-        """Create presets section"""
-        presets_container = ctk.CTkFrame(self.panel)
-        presets_container.pack(fill="x", padx=5, pady=5)
-        
-        presets_header = ctk.CTkLabel(
-            presets_container,
-            text="⚡ QUICK PRESETS",
-            font=ctk.CTkFont(size=14, weight="bold")
-        )
-        presets_header.pack(pady=5)
-        
-        # Preset buttons grid
-        presets_grid = ctk.CTkFrame(presets_container)
-        presets_grid.pack(fill="x", padx=10, pady=5)
-        
-        # Row 1
-        row1 = ctk.CTkFrame(presets_grid)
-        row1.pack(fill="x", pady=2)
-        
-        preset_action = ctk.CTkButton(
-            row1,
-            text="🥊 Action",
-            command=lambda: self.apply_preset("action_scene"),
-            width=80,
-            height=30
-        )
-        preset_action.pack(side="left", padx=2, fill="x", expand=True)
-        
-        preset_power = ctk.CTkButton(
-            row1,
-            text="⚡ Power Up",
-            command=lambda: self.apply_preset("power_up"),
-            width=80,
-            height=30
-        )
-        preset_power.pack(side="left", padx=2, fill="x", expand=True)
-        
-        # Row 2
-        row2 = ctk.CTkFrame(presets_grid)
-        row2.pack(fill="x", pady=2)
-        
-        preset_emotional = ctk.CTkButton(
-            row2,
-            text="💖 Emotional",
-            command=lambda: self.apply_preset("emotional_moment"),
-            width=80,
-            height=30
-        )
-        preset_emotional.pack(side="left", padx=2, fill="x", expand=True)
-        
-        preset_speed = ctk.CTkButton(
-            row2,
-            text="💨 Speed",
-            command=lambda: self.apply_preset("speed_boost"),
-            width=80,
-            height=30
-        )
-        preset_speed.pack(side="left", padx=2, fill="x", expand=True)
-        
-        # Row 3
-        row3 = ctk.CTkFrame(presets_grid)
-        row3.pack(fill="x", pady=2)
-        
-        preset_impact = ctk.CTkButton(
-            row3,
-            text="💥 Impact",
-            command=lambda: self.apply_preset("impact_hit"),
-            width=80,
-            height=30
-        )
-        preset_impact.pack(side="left", padx=2, fill="x", expand=True)
-        
-        preset_custom = ctk.CTkButton(
-            row3,
-            text="⚙️ Custom",
-            command=self.show_custom_preset_dialog,
-            width=80,
-            height=30
-        )
-        preset_custom.pack(side="left", padx=2, fill="x", expand=True)
     
     def load_video(self, video_path: str):
         """Load video for preview"""
@@ -766,26 +653,14 @@ class VideoPreviewPanel:
         else:
             messagebox.showerror("Preview Error", "Failed to generate preview")
     
-    def show_export_progress(self):
-        """Show export progress"""
-        self.export_progress_frame.pack(fill="x", padx=10, pady=5)
-        self.export_button.configure(state="disabled", text="Exporting...")
-        self.export_progress = 0.0
-        self.update_export_progress(0.0)
-    
-    def hide_export_progress(self):
-        """Hide export progress"""
-        self.export_progress_frame.pack_forget()
-        self.export_button.configure(state="normal", text="🎬 RENDER FINAL VIDEO")
     
     def update_export_progress(self, progress: float, status: str = ""):
         """Update export progress"""
         self.export_progress = progress
         
-        # Update local progress bar if visible
-        if hasattr(self, 'export_progress_bar'):
-            self.export_progress_bar.set(progress / 100.0)
-            self.export_progress_label.configure(text=f"Exporting... {progress:.1f}%")
+        # Update export button text to show progress
+        if progress > 0:
+            self.export_button.configure(text=f"{progress:.0f}%", state="disabled")
         
         # Update export dialog progress if it exists
         if self.export_dialog:
@@ -793,8 +668,8 @@ class VideoPreviewPanel:
     
     def export_completed(self, success: bool = True):
         """Handle export completion"""
-        # Update local UI
-        self.hide_export_progress()
+        # Reset export button
+        self.export_button.configure(text="🎬 Render", state="normal")
         
         # Update export dialog if it exists
         if self.export_dialog:
@@ -816,17 +691,3 @@ class VideoPreviewPanel:
                 "audio": "AAC"
             }
     
-    def apply_preset(self, preset_name: str):
-        """Apply a preset (to be connected to main app)"""
-        if hasattr(self, 'on_preset_selected'):
-            self.on_preset_selected(preset_name)
-        else:
-            messagebox.showinfo("Preset", f"Applying preset: {preset_name}")
-    
-    def show_custom_preset_dialog(self):
-        """Show custom preset creation dialog"""
-        messagebox.showinfo("Custom Preset", "Custom preset creation dialog will be implemented.")
-    
-    def set_preset_callback(self, callback: Callable[[str], None]):
-        """Set callback for preset selection"""
-        self.on_preset_selected = callback
