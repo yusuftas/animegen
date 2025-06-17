@@ -150,7 +150,8 @@ class EffectEngineRegistry:
             'impact_frame': {'method': 'impact_frames_unified', 'params': {'style': 'manga'}},
             'energy_aura': {'method': 'energy_aura_unified', 'params': {'intensity': 1.0, 'pulse_rate': 6.0}},
             'character_glow': {'method': 'character_glow_unified', 'params': {'color': (255, 255, 255), 'intensity': 1.0}},
-            'action_lines': {'method': 'action_lines_unified', 'params': {'direction': 'converging', 'intensity': 0.8}}
+            'action_lines': {'method': 'action_lines_unified', 'params': {'line_count': 12, 'max_length': 100}},
+            'manga_tone': {'method': 'manga_tone_unified', 'params': {'tone_type': 'dots'}}
         }
         
         for effect_name, effect_info in anime_effects.items():

@@ -117,42 +117,6 @@ class AnimeEffectsLibrary:
             logger.error(f"Error adding speed lines: {e}")
             return frame
     
-    def speed_lines_clip(self, clip: VideoFileClip, direction: str = "right", 
-                        start_time: float = 0, duration: float = 0.5, 
-                        intensity: float = 0.8) -> VideoFileClip:
-        """
-        Apply speed lines effect to a video clip.
-        
-        Args:
-            clip: Input video clip
-            direction: Direction of speed lines
-            start_time: When to start the effect
-            duration: Duration of the effect
-            intensity: Intensity of the effect
-            
-        Returns:
-            Video clip with speed lines effect
-        """
-        try:
-            def apply_lines(get_frame, t):
-                frame = get_frame(t)
-                if start_time <= t <= start_time + duration:
-                    # Fade in/out effect
-                    progress = (t - start_time) / duration
-                    current_intensity = intensity * (1.0 - abs(progress - 0.5) * 2)
-                    current_intensity = max(0, current_intensity)
-                    
-                    return self.add_speed_lines(frame, direction, current_intensity)
-                return frame
-            
-            result = clip.fl(apply_lines)
-            logger.info(f"Applied speed lines effect: {direction} direction for {duration}s")
-            return result
-            
-        except Exception as e:
-            logger.error(f"Error applying speed lines to clip: {e}")
-            return clip
-    
     def create_impact_frame(self, frame: np.ndarray, style: str = "manga") -> np.ndarray:
         """
         Create high-contrast impact frame effect.
@@ -214,36 +178,6 @@ class AnimeEffectsLibrary:
             logger.error(f"Error creating impact frame: {e}")
             return frame
     
-    def add_impact_frames(self, clip: VideoFileClip, impact_times: List[float], 
-                         duration: float = 0.1, style: str = "manga") -> VideoFileClip:
-        """
-        Add impact frames at specific timestamps.
-        
-        Args:
-            clip: Input video clip
-            impact_times: List of timestamps to add impact frames
-            duration: Duration of each impact frame
-            style: Style of impact frames
-            
-        Returns:
-            Video clip with impact frames added
-        """
-        try:
-            def impact_effect(get_frame, t):
-                frame = get_frame(t)
-                for impact_time in impact_times:
-                    if abs(t - impact_time) < duration/2:
-                        return self.create_impact_frame(frame, style)
-                return frame
-            
-            result = clip.fl(impact_effect)
-            logger.info(f"Added {len(impact_times)} impact frames with {style} style")
-            return result
-            
-        except Exception as e:
-            logger.error(f"Error adding impact frames: {e}")
-            return clip
-    
     def create_character_glow(self, frame: np.ndarray, glow_color: Tuple[int, int, int] = None,
                              glow_intensity: float = 0.5) -> np.ndarray:
         """
@@ -286,51 +220,35 @@ class AnimeEffectsLibrary:
             logger.error(f"Error creating character glow: {e}")
             return frame
     
-    def energy_aura_effect(self, clip: VideoFileClip, start_time: float, duration: float,
-                          intensity: float = 1.0, pulse_rate: float = 6.0) -> VideoFileClip:
+    def create_energy_aura(self, frame: np.ndarray, intensity: float = 1.0) -> np.ndarray:
         """
-        Add pulsing energy aura effect to a clip.
+        Create energy aura effect on a single frame.
         
         Args:
-            clip: Input video clip
-            start_time: When to start the effect
-            duration: Duration of the effect
-            intensity: Base intensity of the aura
-            pulse_rate: Rate of pulsing (pulses per second)
+            frame: Input frame
+            intensity: Intensity of the aura effect
             
         Returns:
-            Video clip with energy aura effect
+            Frame with energy aura effect
         """
         try:
-            def aura_func(get_frame, t):
-                frame = get_frame(t)
-                if start_time <= t <= start_time + duration:
-                    # Pulsing intensity based on sine wave
-                    pulse = (np.sin((t - start_time) * pulse_rate * 2 * np.pi) + 1) / 2
-                    current_intensity = intensity * pulse
-                    
-                    # Enhance brightness and saturation
-                    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                    hsv[:, :, 2] = np.clip(hsv[:, :, 2] * (1 + current_intensity * 0.5), 0, 255)
-                    hsv[:, :, 1] = np.clip(hsv[:, :, 1] * (1 + current_intensity * 0.3), 0, 255)
-                    
-                    energy_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-                    
-                    # Add outer glow for strong pulses
-                    if current_intensity > 0.6:
-                        energy_frame = self.create_character_glow(energy_frame, 
-                                                                glow_intensity=current_intensity * 0.4)
-                    
-                    return energy_frame
-                return frame
+            # Enhance brightness and saturation
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            hsv[:, :, 2] = np.clip(hsv[:, :, 2] * (1 + intensity * 0.5), 0, 255)
+            hsv[:, :, 1] = np.clip(hsv[:, :, 1] * (1 + intensity * 0.3), 0, 255)
             
-            result = clip.fl(aura_func)
-            logger.info(f"Applied energy aura effect from {start_time}s for {duration}s")
-            return result
+            energy_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+            
+            # Add outer glow for strong intensities
+            if intensity > 0.6:
+                energy_frame = self.create_character_glow(energy_frame, 
+                                                        glow_intensity=intensity * 0.4)
+            
+            return energy_frame
             
         except Exception as e:
-            logger.error(f"Error applying energy aura effect: {e}")
-            return clip
+            logger.error(f"Error creating energy aura: {e}")
+            return frame
     
     def add_action_lines(self, frame: np.ndarray, center_point: Tuple[int, int] = None,
                         line_count: int = 12, max_length: int = 100) -> np.ndarray:
@@ -524,17 +442,32 @@ class AnimeEffectsLibrary:
                                     color=color, intensity=intensity)
 
     def action_lines_unified(self, clip: VideoFileClip, start_time: float, duration: float,
-                            direction: str = "converging", intensity: float = 0.8) -> VideoFileClip:
+                            line_count: int = 12, max_length: int = 100) -> VideoFileClip:
         """Apply action lines effect with unified interface.""" 
         def effect_func(effect_clip, **params):
             def apply_lines(get_frame, t):
                 frame = get_frame(t)
-                return self.add_action_lines(frame, params['direction'], params['intensity'])
+                return self.add_action_lines(frame, center_point=None, 
+                                           line_count=params['line_count'], 
+                                           max_length=params['max_length'])
             
             return effect_clip.fl(apply_lines)
         
         return self._apply_to_subclip(clip, start_time, duration, effect_func,
-                                    direction=direction, intensity=intensity)
+                                    line_count=line_count, max_length=max_length)
+
+    def manga_tone_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                          tone_type: str = "dots") -> VideoFileClip:
+        """Apply manga screen tone effect with unified interface."""
+        def effect_func(effect_clip, **params):
+            def apply_tone(get_frame, t):
+                frame = get_frame(t)
+                return self.manga_screen_tone(frame, params['tone_type'])
+            
+            return effect_clip.fl(apply_tone)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func,
+                                    tone_type=tone_type)
 
     def _apply_to_subclip(self, full_clip: VideoFileClip, start_time: float, 
                          duration: float, effect_func, **params) -> VideoFileClip:
