@@ -27,6 +27,8 @@ class ProductionEffect(BaseEffect):
     engine_class: Optional[Type] = None
     engine_method: Optional[str] = None
     engine_config_key: Optional[str] = None
+    start_time: float = 0.0
+    duration: float = 1.0
     
     def __post_init__(self):
         """Initialize engine instance if not already set"""
@@ -43,9 +45,20 @@ class ProductionEffect(BaseEffect):
         """Convert UI parameters to engine configuration format"""
         config = {}
         for param_name, param in self.parameters.items():
+            # Skip timing parameters as they're handled separately
+            if param_name in ['start_time', 'duration']:
+                continue
+                
             # Convert UI parameter names to engine parameter names
             engine_param_name = self._map_ui_to_engine_param(param_name)
             config[engine_param_name] = self._convert_parameter_value(param)
+        
+        # Update effect timing from parameters
+        if 'start_time' in self.parameters:
+            self.start_time = self.parameters['start_time'].value
+        if 'duration' in self.parameters:
+            self.duration = self.parameters['duration'].value
+            
         return config
     
     def _map_ui_to_engine_param(self, ui_param: str) -> str:
@@ -114,13 +127,13 @@ class EffectEngineRegistry:
         """Build comprehensive effect registry from production engines"""
         self.effect_registry = {}
         
-        # Motion Effects - use actual method names from MotionEffectsEngine
+        # Motion Effects - use unified interface methods  
         motion_effects = {
-            'speed_ramp': {'method': 'speed_ramp_effect', 'params': {'speed_points': [(0, 1.0), (2, 1.5), (4, 1.0)]}},
-            'zoom_punch': {'method': 'zoom_punch_effect', 'params': {'zoom_time': 2.0, 'zoom_factor': 1.5, 'duration': 0.2}},
-            'camera_shake': {'method': 'camera_shake_effect', 'params': {'shake_intensity': 10, 'shake_duration': 1.0}},
-            'motion_blur': {'method': 'motion_blur_effect', 'params': {'blur_strength': 5.0, 'motion_angle': 0.0}},
-            'freeze_frame': {'method': 'freeze_frame_effect', 'params': {'freeze_time': 1.0, 'freeze_duration': 2.0}}
+            'speed_ramp': {'method': 'speed_ramp_unified', 'params': {'speed_points': [(0, 1.0), (0.5, 1.5), (1.0, 1.0)]}},
+            'zoom_punch': {'method': 'zoom_punch_unified', 'params': {'zoom_factor': 1.5}},
+            'camera_shake': {'method': 'camera_shake_unified', 'params': {'shake_intensity': 10}},
+            'motion_blur': {'method': 'motion_blur_unified', 'params': {'blur_strength': 5.0, 'motion_angle': 0.0}},
+            'freeze_frame': {'method': 'freeze_frame_unified', 'params': {'freeze_duration': 1.0}}
         }
         
         for effect_name, effect_info in motion_effects.items():
@@ -131,18 +144,13 @@ class EffectEngineRegistry:
                 'preset_config': effect_info['params']
             }
         
-        # Anime Effects - use actual method names from AnimeEffectsLibrary
+        # Anime Effects - use unified interface methods
         anime_effects = {
-            # Clip-level effects (work with VideoFileClip)
-            'speed_lines': {'method': 'speed_lines_clip', 'params': {'direction': 'right', 'start_time': 0, 'duration': 0.5, 'intensity': 0.8}},
-            'impact_frame': {'method': 'add_impact_frames', 'params': {'impact_times': [1.0], 'duration': 0.1, 'style': 'manga'}},
-            'energy_aura': {'method': 'energy_aura_effect', 'params': {'start_time': 0, 'duration': 2.0, 'intensity': 1.0, 'pulse_rate': 6.0}},
-            
-            # Frame-level effects (work with numpy arrays)
-            'speed_lines_frame': {'method': 'add_speed_lines', 'params': {'direction': 'right', 'intensity': 0.8}, 'frame_level': True},
-            'impact_frame_direct': {'method': 'create_impact_frame', 'params': {'style': 'manga'}, 'frame_level': True},
-            'character_glow': {'method': 'create_character_glow', 'params': {'color': (255, 255, 255), 'intensity': 1.0}, 'frame_level': True},
-            'action_lines': {'method': 'add_action_lines', 'params': {'direction': 'converging', 'intensity': 0.8}, 'frame_level': True}
+            'speed_lines': {'method': 'speed_lines_unified', 'params': {'direction': 'right', 'intensity': 0.8}},
+            'impact_frame': {'method': 'impact_frames_unified', 'params': {'style': 'manga'}},
+            'energy_aura': {'method': 'energy_aura_unified', 'params': {'intensity': 1.0, 'pulse_rate': 6.0}},
+            'character_glow': {'method': 'character_glow_unified', 'params': {'color': (255, 255, 255), 'intensity': 1.0}},
+            'action_lines': {'method': 'action_lines_unified', 'params': {'direction': 'converging', 'intensity': 0.8}}
         }
         
         for effect_name, effect_info in anime_effects.items():
@@ -150,16 +158,15 @@ class EffectEngineRegistry:
                 'engine': 'anime',
                 'method': effect_info['method'],
                 'category': EffectCategory.ANIME,
-                'preset_config': effect_info['params'],
-                'frame_level': effect_info.get('frame_level', False)
+                'preset_config': effect_info['params']
             }
         
-        # Color Effects - use actual method names from ColorEffectsEngine  
+        # Color Effects - use unified interface methods
         color_effects = {
-            'color_grading': {'method': 'apply_color_grading', 'params': {'style': 'vibrant'}},
-            'chromatic_aberration': {'method': 'chromatic_aberration_effect', 'params': {'intensity': 5}, 'frame_level': True},
-            'bloom': {'method': 'bloom_effect', 'params': {'threshold': 200, 'blur_size': 15}, 'frame_level': True},
-            'vintage_vhs': {'method': 'vintage_vhs_effect', 'params': {}, 'frame_level': True}
+            'color_grading': {'method': 'color_grading_unified', 'params': {'style': 'vibrant'}},
+            'chromatic_aberration': {'method': 'chromatic_aberration_unified', 'params': {'intensity': 5}},
+            'bloom': {'method': 'bloom_unified', 'params': {'threshold': 200, 'blur_size': 15}},
+            'vintage_vhs': {'method': 'vintage_vhs_unified', 'params': {}}
         }
         
         for effect_name, effect_info in color_effects.items():
@@ -167,8 +174,7 @@ class EffectEngineRegistry:
                 'engine': 'color',
                 'method': effect_info['method'],
                 'category': EffectCategory.COLOR,
-                'preset_config': effect_info['params'],
-                'frame_level': effect_info.get('frame_level', False)
+                'preset_config': effect_info['params']
             }
         
         # Text Effects - use actual method names from TextEffectsEngine
@@ -283,6 +289,27 @@ class EffectEngineRegistry:
         """Create UI parameters from engine preset configuration"""
         parameters = {}
         
+        # Add standard timing parameters
+        parameters['start_time'] = EffectParameter(
+            name='Start Time',
+            value=0.0,
+            param_type='float',
+            description='Start time of the effect (seconds)',
+            min_value=0.0,
+            max_value=300.0,  # 5 minutes max
+            step=0.1
+        )
+        
+        parameters['duration'] = EffectParameter(
+            name='Duration', 
+            value=1.0,
+            param_type='float',
+            description='Duration of the effect (seconds)',
+            min_value=0.1,
+            max_value=60.0,  # 1 minute max
+            step=0.1
+        )
+        
         for param_name, param_value in preset_config.items():
             param_type = self._infer_parameter_type(param_value)
             
@@ -345,13 +372,9 @@ class ProductionEffectFactory:
         # Convert UI parameters to engine format
         config = effect.to_engine_config()
         
-        # Get effect info from registry for special handling
-        effect_key = effect.name.lower().replace(' ', '_')
-        effect_info = effect_registry.effect_registry.get(effect_key, {})
-        
-        # Apply effect with unified interface handling
+        # Apply effect using unified interface (all methods now expect clip, start_time, duration, **params)
         try:
-            return cls._apply_effect_with_unified_interface(clip, method, config, effect, effect_info)
+            return method(clip, effect.start_time, effect.duration, **config)
                 
         except Exception as e:
             print(f"Error applying effect {effect.name}: {e}")
@@ -359,105 +382,3 @@ class ProductionEffectFactory:
             traceback.print_exc()
             return clip  # Return original clip on error
     
-    @classmethod
-    def _apply_effect_with_unified_interface(cls, clip, method, config, effect: ProductionEffect, effect_info: dict):
-        """Apply effect with proper interface handling for clips vs frames"""
-        
-        # Handle frame-level effects (expects numpy arrays)
-        if effect_info.get('frame_level', False):
-            return cls._apply_frame_level_effect(clip, method, config)
-        
-        # Handle special effect patterns by category
-        if effect.category == EffectCategory.MOTION:
-            return cls._apply_motion_effect(clip, method, config)
-        
-        elif effect.category == EffectCategory.ANIME:
-            return cls._apply_anime_effect(clip, method, config, effect)
-        
-        elif effect.category == EffectCategory.COLOR:
-            return cls._apply_color_effect(clip, method, config)
-        
-        elif effect.category == EffectCategory.TEXT:
-            return cls._apply_text_effect(clip, method, config, effect)
-        
-        elif effect.category == EffectCategory.AUDIO_SYNC:
-            return cls._apply_audio_sync_effect(clip, method, config)
-        
-        elif effect.category == EffectCategory.TRANSITIONS:
-            return cls._apply_transition_effect(clip, method, config)
-        
-        else:
-            # Default: try direct method call with clip
-            return method(clip, **config)
-    
-    @classmethod
-    def _apply_frame_level_effect(cls, clip, method, config):
-        """Apply effects that work on individual frames (numpy arrays)"""
-        def process_frame(get_frame, t):
-            # Get frame as numpy array
-            frame = get_frame(t)
-            # Apply frame-level effect
-            processed_frame = method(frame, **config)
-            return processed_frame
-        
-        return clip.fl(process_frame)
-    
-    @classmethod
-    def _apply_motion_effect(cls, clip, method, config):
-        """Apply motion effects (work with clips directly)"""
-        return method(clip, **config)
-    
-    @classmethod
-    def _apply_anime_effect(cls, clip, method, config, effect):
-        """Apply anime effects with special parameter handling"""
-        method_name = effect.engine_method
-        
-        if method_name == 'speed_lines_clip':
-            return method(clip, **config)
-        elif method_name == 'add_impact_frames':
-            # Special handling for impact frames - needs impact_times as list
-            impact_times = config.get('impact_times', [1.0])
-            duration = config.get('duration', 0.1)
-            style = config.get('style', 'manga')
-            return method(clip, impact_times, duration, style)
-        elif method_name == 'energy_aura_effect':
-            # Special handling for energy aura
-            start_time = config.get('start_time', 0)
-            duration = config.get('duration', 2.0)
-            intensity = config.get('intensity', 1.0)
-            pulse_rate = config.get('pulse_rate', 6.0)
-            return method(clip, start_time, duration, intensity, pulse_rate)
-        else:
-            return method(clip, **config)
-    
-    @classmethod
-    def _apply_color_effect(cls, clip, method, config):
-        """Apply color effects (mostly clip-level)"""
-        return method(clip, **config)
-    
-    @classmethod
-    def _apply_text_effect(cls, clip, method, config, effect):
-        """Apply text effects with composition"""
-        try:
-            from moviepy.editor import CompositeVideoClip
-            text_clip = method(**config)
-            if hasattr(text_clip, 'set_duration'):
-                text_clip = text_clip.set_duration(effect.duration or clip.duration)
-            if hasattr(text_clip, 'set_start'):
-                text_clip = text_clip.set_start(effect.start_time)
-            return CompositeVideoClip([clip, text_clip])
-        except Exception as e:
-            print(f"Text effect composition failed: {e}")
-            return clip
-    
-    @classmethod
-    def _apply_audio_sync_effect(cls, clip, method, config):
-        """Apply audio sync effects"""
-        return method(clip, **config)
-    
-    @classmethod
-    def _apply_transition_effect(cls, clip, method, config):
-        """Apply transition effects (need two clips)"""
-        # For now, use the same clip as both input and output
-        # In a full implementation, this would get the next clip in sequence
-        return method(clip, clip, **config)

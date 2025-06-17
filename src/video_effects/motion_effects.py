@@ -16,6 +16,8 @@ from moviepy.video.fx import speedx
 from typing import List, Tuple, Optional
 import logging
 
+from .base_effect import BaseVideoEffect
+
 logger = logging.getLogger(__name__)
 
 
@@ -348,3 +350,90 @@ class MotionEffectsEngine:
                 'speed_ramp': {'speed_points': [(0, 0.8), (1, 3.0), (2, 1.0)]}
             }
         }
+
+    # Unified Interface Methods
+    def speed_ramp_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                          speed_points: List[Tuple[float, float]] = None) -> VideoFileClip:
+        """Apply speed ramp effect with unified interface."""
+        if speed_points is None:
+            speed_points = [(0, 1.0), (duration/2, 0.5), (duration, 1.0)]
+        
+        # Adjust speed points to be relative to the effect duration
+        adjusted_points = [(t * duration / speed_points[-1][0], speed) for t, speed in speed_points]
+        
+        return self._apply_to_subclip(clip, start_time, duration, 
+                                    lambda c, **p: self.speed_ramp_effect(c, p['speed_points']),
+                                    speed_points=adjusted_points)
+
+    def zoom_punch_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                          zoom_factor: float = 1.5) -> VideoFileClip:
+        """Apply zoom punch effect with unified interface."""
+        return self._apply_to_subclip(clip, start_time, duration,
+                                    lambda c, **p: self.zoom_punch_effect(c, 0, p['zoom_factor'], c.duration),
+                                    zoom_factor=zoom_factor)
+
+    def camera_shake_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                           shake_intensity: float = 10) -> VideoFileClip:
+        """Apply camera shake effect with unified interface."""
+        return self._apply_to_subclip(clip, start_time, duration,
+                                    lambda c, **p: self.camera_shake_effect(c, p['shake_intensity'], c.duration),
+                                    shake_intensity=shake_intensity)
+
+    def motion_blur_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                           blur_strength: float = 5.0, motion_angle: float = 0.0) -> VideoFileClip:
+        """Apply motion blur effect with unified interface."""
+        return self._apply_to_subclip(clip, start_time, duration,
+                                    lambda c, **p: self.motion_blur_effect(c, p['blur_strength'], p['motion_angle']),
+                                    blur_strength=blur_strength, motion_angle=motion_angle)
+
+    def freeze_frame_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                           freeze_duration: float = 1.0) -> VideoFileClip:
+        """Apply freeze frame effect with unified interface."""
+        # For freeze frame, the effect should happen at start_time and last for freeze_duration
+        return self._apply_to_subclip(clip, start_time, duration,
+                                    lambda c, **p: self.freeze_frame_effect(c, 0, p['freeze_duration']),
+                                    freeze_duration=min(freeze_duration, duration))
+
+    def _apply_to_subclip(self, full_clip: VideoFileClip, start_time: float, 
+                         duration: float, effect_func, **params) -> VideoFileClip:
+        """Helper method to apply effects to a specific time range within a clip."""
+        try:
+            # Validate time bounds
+            clip_duration = full_clip.duration
+            end_time = start_time + duration
+            
+            if start_time < 0:
+                start_time = 0
+            if end_time > clip_duration:
+                end_time = clip_duration
+                duration = end_time - start_time
+            
+            if duration <= 0:
+                logger.warning(f"Invalid duration {duration}")
+                return full_clip
+            
+            # Split clip into parts
+            parts = []
+            
+            # Part before effect
+            if start_time > 0:
+                parts.append(full_clip.subclip(0, start_time))
+            
+            # Part with effect applied
+            effect_clip = full_clip.subclip(start_time, end_time)
+            processed_clip = effect_func(effect_clip, **params)
+            parts.append(processed_clip)
+            
+            # Part after effect
+            if end_time < clip_duration:
+                parts.append(full_clip.subclip(end_time, clip_duration))
+            
+            # Concatenate all parts
+            if len(parts) == 1:
+                return parts[0]
+            else:
+                return concatenate_videoclips(parts)
+                
+        except Exception as e:
+            logger.error(f"Error applying effect to subclip: {e}")
+            return full_clip

@@ -15,6 +15,8 @@ from typing import List, Tuple, Optional, Union
 import logging
 import math
 
+from .base_effect import BaseVideoEffect, unified_effect_interface
+
 logger = logging.getLogger(__name__)
 
 
@@ -459,3 +461,121 @@ class AnimeEffectsLibrary:
                 'manga_tone': {'tone_type': 'dots'}
             }
         }
+
+    # Unified Interface Methods
+    def speed_lines_unified(self, clip: VideoFileClip, start_time: float, duration: float, 
+                           direction: str = "right", intensity: float = 0.8) -> VideoFileClip:
+        """Apply speed lines effect with unified interface."""
+        def effect_func(effect_clip, **params):
+            def apply_lines(get_frame, t):
+                frame = get_frame(t)
+                # Apply fade in/out within the effect duration
+                local_time = t
+                progress = local_time / effect_clip.duration if effect_clip.duration > 0 else 0
+                fade_intensity = params['intensity'] * (1.0 - abs(progress - 0.5) * 2)
+                fade_intensity = max(0, fade_intensity)
+                
+                return self.add_speed_lines(frame, params['direction'], fade_intensity)
+            
+            return effect_clip.fl(apply_lines)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func, 
+                                    direction=direction, intensity=intensity)
+
+    def impact_frames_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                             style: str = "manga") -> VideoFileClip:
+        """Apply impact frames effect with unified interface."""
+        def effect_func(effect_clip, **params):
+            def apply_impact(get_frame, t):
+                frame = get_frame(t)
+                return self.create_impact_frame(frame, params['style'])
+            
+            return effect_clip.fl(apply_impact)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func, style=style)
+
+    def energy_aura_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                           intensity: float = 1.0, pulse_rate: float = 6.0) -> VideoFileClip:
+        """Apply energy aura effect with unified interface."""
+        def effect_func(effect_clip, **params):
+            def apply_aura(get_frame, t):
+                frame = get_frame(t)
+                # Create pulsing effect
+                pulse_intensity = params['intensity'] * (0.8 + 0.2 * math.sin(t * params['pulse_rate']))
+                return self.create_energy_aura(frame, pulse_intensity)
+            
+            return effect_clip.fl(apply_aura)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func, 
+                                    intensity=intensity, pulse_rate=pulse_rate)
+
+    def character_glow_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                              color: Tuple[int, int, int] = (255, 255, 255), 
+                              intensity: float = 1.0) -> VideoFileClip:
+        """Apply character glow effect with unified interface."""
+        def effect_func(effect_clip, **params):
+            def apply_glow(get_frame, t):
+                frame = get_frame(t)
+                return self.create_character_glow(frame, params['color'], params['intensity'])
+            
+            return effect_clip.fl(apply_glow)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func, 
+                                    color=color, intensity=intensity)
+
+    def action_lines_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                            direction: str = "converging", intensity: float = 0.8) -> VideoFileClip:
+        """Apply action lines effect with unified interface.""" 
+        def effect_func(effect_clip, **params):
+            def apply_lines(get_frame, t):
+                frame = get_frame(t)
+                return self.add_action_lines(frame, params['direction'], params['intensity'])
+            
+            return effect_clip.fl(apply_lines)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func,
+                                    direction=direction, intensity=intensity)
+
+    def _apply_to_subclip(self, full_clip: VideoFileClip, start_time: float, 
+                         duration: float, effect_func, **params) -> VideoFileClip:
+        """Helper method to apply effects to a specific time range within a clip."""
+        try:
+            # Validate time bounds
+            clip_duration = full_clip.duration
+            end_time = start_time + duration
+            
+            if start_time < 0:
+                start_time = 0
+            if end_time > clip_duration:
+                end_time = clip_duration
+                duration = end_time - start_time
+            
+            if duration <= 0:
+                logger.warning(f"Invalid duration {duration}")
+                return full_clip
+            
+            # Split clip into parts
+            parts = []
+            
+            # Part before effect
+            if start_time > 0:
+                parts.append(full_clip.subclip(0, start_time))
+            
+            # Part with effect applied
+            effect_clip = full_clip.subclip(start_time, end_time)
+            processed_clip = effect_func(effect_clip, **params)
+            parts.append(processed_clip)
+            
+            # Part after effect
+            if end_time < clip_duration:
+                parts.append(full_clip.subclip(end_time, clip_duration))
+            
+            # Concatenate all parts
+            if len(parts) == 1:
+                return parts[0]
+            else:
+                return concatenate_videoclips(parts)
+                
+        except Exception as e:
+            logger.error(f"Error applying effect to subclip: {e}")
+            return full_clip

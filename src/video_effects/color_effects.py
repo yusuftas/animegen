@@ -15,6 +15,7 @@ import logging
 from moviepy.editor import VideoFileClip, CompositeVideoClip
 from moviepy.video.fx import speedx
 
+from .base_effect import BaseVideoEffect
 
 logger = logging.getLogger(__name__)
 
@@ -520,3 +521,89 @@ class ColorEffectsEngine:
                 'bloom': {'threshold': 160, 'blur_size': 25}
             }
         }
+
+    # Unified Interface Methods  
+    def color_grading_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                             style: str = "vibrant") -> VideoFileClip:
+        """Apply color grading effect with unified interface."""
+        return self._apply_to_subclip(clip, start_time, duration,
+                                    lambda c, **p: self.apply_color_grading(c, p['style']),
+                                    style=style)
+
+    def chromatic_aberration_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                                   intensity: int = 5) -> VideoFileClip:
+        """Apply chromatic aberration effect with unified interface."""
+        def effect_func(effect_clip, **params):
+            def apply_aberration(get_frame, t):
+                frame = get_frame(t)
+                return self.chromatic_aberration_effect(frame, params['intensity'])
+            return effect_clip.fl(apply_aberration)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func, intensity=intensity)
+
+    def bloom_unified(self, clip: VideoFileClip, start_time: float, duration: float,
+                     threshold: int = 200, blur_size: int = 15) -> VideoFileClip:
+        """Apply bloom effect with unified interface."""
+        def effect_func(effect_clip, **params):
+            def apply_bloom(get_frame, t):
+                frame = get_frame(t)
+                return self.bloom_effect(frame, params['threshold'], params['blur_size'])
+            return effect_clip.fl(apply_bloom)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func, 
+                                    threshold=threshold, blur_size=blur_size)
+
+    def vintage_vhs_unified(self, clip: VideoFileClip, start_time: float, duration: float) -> VideoFileClip:
+        """Apply vintage VHS effect with unified interface."""
+        def effect_func(effect_clip, **params):
+            def apply_vhs(get_frame, t):
+                frame = get_frame(t)
+                return self.vintage_vhs_effect(frame)
+            return effect_clip.fl(apply_vhs)
+        
+        return self._apply_to_subclip(clip, start_time, duration, effect_func)
+
+    def _apply_to_subclip(self, full_clip: VideoFileClip, start_time: float, 
+                         duration: float, effect_func, **params) -> VideoFileClip:
+        """Helper method to apply effects to a specific time range within a clip."""
+        try:
+            # Validate time bounds
+            clip_duration = full_clip.duration
+            end_time = start_time + duration
+            
+            if start_time < 0:
+                start_time = 0
+            if end_time > clip_duration:
+                end_time = clip_duration
+                duration = end_time - start_time
+            
+            if duration <= 0:
+                logger.warning(f"Invalid duration {duration}")
+                return full_clip
+            
+            # Split clip into parts
+            parts = []
+            
+            # Part before effect
+            if start_time > 0:
+                parts.append(full_clip.subclip(0, start_time))
+            
+            # Part with effect applied
+            effect_clip = full_clip.subclip(start_time, end_time)
+            processed_clip = effect_func(effect_clip, **params)
+            parts.append(processed_clip)
+            
+            # Part after effect
+            if end_time < clip_duration:
+                parts.append(full_clip.subclip(end_time, clip_duration))
+            
+            # Concatenate all parts
+            if len(parts) == 1:
+                return parts[0]
+            else:
+                from moviepy.editor import concatenate_videoclips
+                return concatenate_videoclips(parts)
+                
+        except Exception as e:
+            logger.error(f"Error applying effect to subclip: {e}")
+            return full_clip
