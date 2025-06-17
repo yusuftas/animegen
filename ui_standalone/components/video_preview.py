@@ -11,6 +11,8 @@ import time
 import os
 import sys
 from pathlib import Path
+from PIL import Image, ImageTk
+import cv2
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -93,35 +95,35 @@ class VideoPreviewPanel:
     
     def create_preview_area(self):
         """Create video preview display area"""
-        # Preview container with fixed proportions
+        # Preview container with responsive sizing
         preview_container = ctk.CTkFrame(self.panel)
         preview_container.pack(fill="both", expand=True, padx=5, pady=5)
         
-        # Configure preview container to maintain aspect ratio
+        # Configure preview container for responsive sizing
         preview_container.grid_rowconfigure(0, weight=1)
         preview_container.grid_columnconfigure(0, weight=1)
         
-        # Preview frame (16:9 aspect ratio maintained)
+        # Preview frame with responsive height
         self.preview_frame = ctk.CTkFrame(
             preview_container,
             fg_color="black",
-            corner_radius=10,
-            height=300  # Fixed height for better control
+            corner_radius=10
         )
         self.preview_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
-        self.preview_frame.grid_propagate(False)  # Maintain size
         
-        # Video display canvas for actual video rendering
+        # Video display canvas for actual video rendering with responsive sizing
         try:
             import tkinter as tk
             self.video_canvas = tk.Canvas(
                 self.preview_frame,
                 bg="black",
-                highlightthickness=0,
-                width=400,
-                height=225  # 16:9 aspect ratio
+                highlightthickness=0
             )
-            self.video_canvas.place(relx=0.5, rely=0.5, anchor="center")
+            self.video_canvas.pack(fill="both", expand=True, padx=5, pady=5)
+            
+            # Bind resize events for responsive video scaling
+            self.video_canvas.bind('<Configure>', self.on_canvas_resize)
+            
         except:
             # Fallback to label if canvas fails
             self.video_canvas = None
@@ -153,6 +155,63 @@ class VideoPreviewPanel:
         
         # Initially hidden
         self.processing_overlay.place_forget()
+        
+        # Store video dimensions for aspect ratio calculation
+        self.video_aspect_ratio = 16/9  # Default aspect ratio
+        self.current_frame = None
+    
+    def on_canvas_resize(self, event):
+        """Handle canvas resize events to maintain aspect ratio"""
+        if self.current_frame is not None and self.video_canvas:
+            # Redraw the current frame with new canvas size
+            self.display_frame_on_canvas(self.current_frame)
+    
+    def display_frame_on_canvas(self, frame_rgb):
+        """Display frame on canvas with proper aspect ratio preservation"""
+        if not self.video_canvas:
+            return
+            
+        try:
+            # Get current canvas dimensions
+            canvas_width = self.video_canvas.winfo_width()
+            canvas_height = self.video_canvas.winfo_height()
+            
+            # Use minimum size if canvas not yet rendered
+            if canvas_width <= 1 or canvas_height <= 1:
+                canvas_width = 640
+                canvas_height = 360
+            
+            # Calculate video dimensions that maintain aspect ratio and fit in canvas
+            canvas_aspect = canvas_width / canvas_height
+            
+            if self.video_aspect_ratio > canvas_aspect:
+                # Video is wider than canvas - fit to width
+                video_width = canvas_width
+                video_height = int(canvas_width / self.video_aspect_ratio)
+            else:
+                # Video is taller than canvas - fit to height  
+                video_height = canvas_height
+                video_width = int(canvas_height * self.video_aspect_ratio)
+            
+            # Resize frame maintaining aspect ratio
+            image = Image.fromarray(frame_rgb)
+            image = image.resize((video_width, video_height), Image.Resampling.LANCZOS)
+            
+            # Convert to PhotoImage and display centered
+            photo = ImageTk.PhotoImage(image)
+            self.video_canvas.delete("all")
+            
+            # Center the video in the canvas
+            x_offset = canvas_width // 2
+            y_offset = canvas_height // 2
+            
+            self.video_canvas.create_image(x_offset, y_offset, image=photo, anchor="center")
+            
+            # Keep reference to prevent garbage collection
+            self.video_canvas.photo = photo
+            
+        except Exception as e:
+            print(f"Error displaying frame: {e}")
     
     def create_video_controls(self):
         """Create video playback controls"""
@@ -536,7 +595,6 @@ class VideoPreviewPanel:
             
             # Try using OpenCV if available
             try:
-                import cv2
                 cap = cv2.VideoCapture(video_path)
                 fps = cap.get(cv2.CAP_PROP_FPS)
                 frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -572,8 +630,6 @@ class VideoPreviewPanel:
             
         try:
             # Try using OpenCV to load frame
-            import cv2
-            from PIL import Image, ImageTk
             
             # Use preview video if available, otherwise use original
             video_path = self.preview_video_path if self.preview_video_path else self.current_video_path
@@ -588,20 +644,13 @@ class VideoPreviewPanel:
                 # Convert BGR to RGB
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 
-                # Resize to fit canvas
-                canvas_width = self.video_canvas.winfo_width() or 400
-                canvas_height = self.video_canvas.winfo_height() or 225
+                # Store current frame and calculate aspect ratio
+                self.current_frame = frame_rgb
+                frame_height, frame_width = frame_rgb.shape[:2]
+                self.video_aspect_ratio = frame_width / frame_height
                 
-                image = Image.fromarray(frame_rgb)
-                image = image.resize((canvas_width, canvas_height), Image.Resampling.LANCZOS)
-                
-                # Convert to PhotoImage and display
-                photo = ImageTk.PhotoImage(image)
-                self.video_canvas.delete("all")
-                self.video_canvas.create_image(canvas_width//2, canvas_height//2, image=photo, anchor="center")
-                
-                # Keep reference to prevent garbage collection
-                self.video_canvas.photo = photo
+                # Display frame with proper aspect ratio
+                self.display_frame_on_canvas(frame_rgb)
                 
                 # Hide placeholder text
                 if hasattr(self, 'video_display'):

@@ -35,6 +35,8 @@ class AnimeEffectsStudio:
         self.root.title("Anime Effects Studio - Video Effects Pipeline")
         self.root.geometry("1600x900")
         self.root.minsize(1200, 700)
+        # self.root.geometry("1800x1000")  # Larger default size for better preview
+        # self.root.minsize(1400, 800)   # Higher minimum size
         
         # Initialize data models
         self.effect_pipeline = EffectPipeline()
@@ -113,10 +115,10 @@ class AnimeEffectsStudio:
         content_frame = ctk.CTkFrame(self.main_container)
         content_frame.pack(fill="both", expand=True, padx=5, pady=5)
         
-        # Configure grid weights
+        # Configure grid weights - give more space to video preview
         content_frame.grid_columnconfigure(0, weight=1)  # Effects library
-        content_frame.grid_columnconfigure(1, weight=2)  # Pipeline editor
-        content_frame.grid_columnconfigure(2, weight=2)  # Video preview
+        content_frame.grid_columnconfigure(1, weight=2)  # Pipeline editor  
+        content_frame.grid_columnconfigure(2, weight=3)  # Video preview - larger
         content_frame.grid_rowconfigure(0, weight=1)
         
         # Left Panel - Effects Library
