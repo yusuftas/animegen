@@ -190,6 +190,10 @@ class AnimeEffectsStudio:
             # Load video in preview panel
             self.video_preview.load_video(file_path)
             
+            # Set video duration in pipeline editor for timing constraints
+            video_duration = getattr(self.video_preview, 'video_duration', 60.0)
+            self.pipeline_editor.set_video_duration(video_duration)
+            
             # Update UI state
             self.pipeline_editor.enable_editing()
             

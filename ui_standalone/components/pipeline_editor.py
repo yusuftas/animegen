@@ -255,6 +255,11 @@ class PipelineEditorPanel:
         self.effect_items = []
         self.selected_item = None
         self.editing_enabled = False
+        self.video_duration = None  # Will be set when video is loaded
+    
+    def set_video_duration(self, duration: float):
+        """Set the video duration for timing constraints"""
+        self.video_duration = duration
         
     def pack_panel(self, **kwargs):
         """Pack the panel into parent with given options"""
@@ -469,18 +474,36 @@ class PipelineEditorPanel:
         """Configure effect parameters"""
         effect = self.pipeline.get_effect(effect_id)
         if effect:
-            # For now, show a simple info dialog
-            # In a full implementation, this would open a parameter dialog
-            param_info = []
-            for name, param in effect.parameters.items():
-                param_info.append(f"{name}: {param.value}")
-            
-            param_text = "\n".join(param_info) if param_info else "No parameters"
-            
-            messagebox.showinfo(
-                f"Configure {effect.name}",
-                f"Effect: {effect.name}\nCategory: {effect.category.value}\n\nParameters:\n{param_text}\n\nFull parameter editing dialog will be implemented next."
-            )
+            try:
+                # Import parameter dialog
+                from .parameter_dialogs import show_parameter_dialog
+                
+                # Show parameter configuration dialog
+                success = show_parameter_dialog(
+                    parent=self.parent,
+                    effect=effect,
+                    on_preview_callback=self.on_parameter_preview,
+                    on_apply_callback=self.on_parameter_apply,
+                    video_duration=self.video_duration
+                )
+                
+                if success:
+                    # Parameters have been applied and pipeline updated via callback
+                    pass
+                    
+            except Exception as e:
+                messagebox.showerror("Configuration Error", f"Failed to open parameter dialog: {e}")
+                # Fallback to simple info dialog
+                param_info = []
+                for name, param in effect.parameters.items():
+                    param_info.append(f"{name}: {param.value}")
+                
+                param_text = "\n".join(param_info) if param_info else "No parameters"
+                
+                messagebox.showinfo(
+                    f"Configure {effect.name}",
+                    f"Effect: {effect.name}\nCategory: {effect.category.value}\n\nParameters:\n{param_text}"
+                )
     
     def delete_effect(self, effect_id: str):
         """Delete effect from pipeline"""
@@ -533,3 +556,22 @@ class PipelineEditorPanel:
         # Trigger preview update
         self.on_pipeline_changed()
         return effect_id
+    
+    def on_parameter_preview(self, effect: BaseEffect):
+        """Handle parameter preview callback from dialog"""
+        try:
+            # Trigger preview update with current parameters (temporary preview only)
+            self.on_pipeline_changed()
+        except Exception as e:
+            print(f"Preview update error: {e}")
+    
+    def on_parameter_apply(self, effect: BaseEffect):
+        """Handle parameter apply callback from dialog"""
+        try:
+            # Parameters are already updated in the effect object
+            # Refresh pipeline display to show updated parameters
+            self.refresh_pipeline()
+            # Trigger final pipeline update
+            self.on_pipeline_changed()
+        except Exception as e:
+            print(f"Parameter apply error: {e}")
