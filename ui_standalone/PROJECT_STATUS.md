@@ -157,11 +157,23 @@ Transitions (TransitionEngine):
 - **✅ **NEW: Dynamic Duration Bounds**: Duration parameters automatically constrained by video duration and start time
 - **✅ **NEW: Smart Parameter Updates**: Pipeline only updates when user clicks Apply, not during parameter adjustment
 
-## 🎯 **OPTIONAL FUTURE ENHANCEMENTS** (100% Complete Core Functionality)
+## 🔧 **PENDING IMPROVEMENTS** (Core Complete, Polish Needed)
+
+### **UI Polish & Bug Fixes** ⚠️ **HIGH PRIORITY**
+1. **EffectItem Parameter Display**: Float values are too long, need rounding for better readability
+2. **EffectItem Timing Section**: Remove unnecessary timing info display that clutters the UI
+3. **Duration Parameter Investigation**: Verify duration actually works correctly on Audio and Transition effects
+4. **Transition Effects Debugging**: Fix couple of transition effects that throw errors
+5. **Parameter Dialog Ranges**: Implement coarser, more intuitive parameter ranges in dialogs
+
+### **Enhanced Video Preview** ✨ **MEDIUM PRIORITY**
+6. **Timeline Markers**: Show effect positions and timing on the timeline scrubber
+7. **Better Preview Performance**: Higher FPS preview if possible for smoother playback
+
+## 🎯 **OPTIONAL FUTURE ENHANCEMENTS** (After Polish Complete)
 
 ### **Enhanced Video Preview** ✨ **BONUS FEATURES**
 - **Audio Playback**: Implement audio during preview
-- **Timeline Markers**: Show effect positions on timeline
 - **Quality Toggle**: HD vs performance preview modes
 
 ### **Scene Analysis Integration** ✨ **BONUS FEATURE**
@@ -225,17 +237,19 @@ ui_standalone/
    - ✅ Parameter validation and error handling
    - ✅ **NEW: Dynamic duration bounds** based on video length and start time
    - ✅ **NEW: Optimized pipeline updates** (only on Apply, not during adjustment)
+   - ✅ **NEW: Audio Sync & Transition fixes** for proper engine interface compatibility
+
+### **🔧 NEXT PRIORITIES (Polish & Bug Fixes)**
+2. **UI Polish**: Fix parameter display formatting and remove clutter
+3. **Effect Debugging**: Resolve remaining transition effect errors  
+4. **Parameter Tuning**: Implement better parameter ranges and responsiveness
+5. **Preview Enhancement**: Timeline markers and improved performance
 
 ### **🎯 OPTIONAL FUTURE ENHANCEMENTS**
-2. **Scene Analysis Integration**: 
-   - Connect UI to existing `src/scene_analysis/` system
-   - Auto-suggest effects based on detected scenes
-   - Batch processing with intelligent effect application
-
-3. **Audio integration**: Enable audio playback during preview
-
-4. **Performance optimization**: Leverage production engine caching
-5. **Documentation**: Update README with parameter dialog details
+6. **Scene Analysis Integration**: Connect to existing `src/scene_analysis/` system
+7. **Audio integration**: Enable audio playback during preview
+8. **Performance optimization**: Leverage production engine caching
+9. **Documentation**: Update README with latest features
 
 ### **✅ COMPLETED (All major work done!)**
 - ✅ **Complete remaining effect implementations** → **All 30+ production effects available**
@@ -244,6 +258,7 @@ ui_standalone/
 - ✅ **Effect Configuration Dialogs** → **Professional parameter dialogs with manual preview**
 - ✅ **Dynamic Parameter Constraints** → **Duration bounds adjust automatically to video length**
 - ✅ **Performance Optimization** → **Pipeline updates only when user applies changes**
+- ✅ **Audio Sync & Transition Fixes** → **Resolved interface compatibility issues with these engines**
 
 ## 💡 **Technical Notes**
 

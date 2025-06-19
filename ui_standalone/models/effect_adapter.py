@@ -45,8 +45,16 @@ class ProductionEffect(BaseEffect):
         """Convert UI parameters to engine configuration format"""
         config = {}
         for param_name, param in self.parameters.items():
-            # Skip timing parameters as they're handled separately
-            if param_name in ['start_time', 'duration']:
+            # Skip timing parameters as they're handled separately for most engines
+            if param_name in ['start_time']:
+                continue
+            
+            # For audio sync effects, duration is a parameter, not separate timing
+            # For transitions, duration is also a parameter
+            if param_name == 'duration':
+                if ('audio' in self.name.lower() or 'transition' in self.name.lower()):
+                    # Include duration as a parameter for audio sync and transitions
+                    config['duration'] = self._convert_parameter_value(param)
                 continue
                 
             # Convert UI parameter names to engine parameter names
@@ -56,7 +64,7 @@ class ProductionEffect(BaseEffect):
         # Update effect timing from parameters
         if 'start_time' in self.parameters:
             self.start_time = self.parameters['start_time'].value
-        if 'duration' in self.parameters:
+        if 'duration' in self.parameters and not ('audio' in self.name.lower() or 'transition' in self.name.lower()):
             self.duration = self.parameters['duration'].value
             
         return config
@@ -196,9 +204,9 @@ class EffectEngineRegistry:
         
         # Audio Sync Effects - use actual method names from AudioSyncEngine
         audio_effects = {
-            'beat_flash': {'method': 'create_beat_flash', 'params': {'beat_time': 1.0, 'intensity': 0.5, 'duration': 0.1}},
-            'beat_zoom': {'method': 'create_beat_zoom', 'params': {'beat_time': 1.0, 'zoom_factor': 1.2, 'duration': 0.2}},
-            'beat_color_pulse': {'method': 'create_beat_color_pulse', 'params': {'beat_time': 1.0, 'color_shift': (1.2, 1.0, 1.0), 'duration': 0.15}}
+            'beat_flash': {'method': 'create_beat_flash', 'params': {'intensity': 0.5, 'duration': 0.1}},
+            'beat_zoom': {'method': 'create_beat_zoom', 'params': {'zoom_factor': 1.2, 'duration': 0.2}},
+            'beat_color_pulse': {'method': 'create_beat_color_pulse', 'params': {'color_shift': (1.2, 1.0, 1.0), 'duration': 0.15}}
         }
         
         for effect_name, effect_info in audio_effects.items():
@@ -360,7 +368,7 @@ class ProductionEffectFactory:
     
     @classmethod
     def apply_effect_to_clip(cls, clip, effect: ProductionEffect):
-        """Apply production effect to video clip with unified interface"""
+        """Apply production effect to video clip with engine-specific interface"""
         engine = effect.get_engine_instance()
         if not engine or not effect.engine_method:
             raise ValueError(f"Cannot apply effect {effect.name}: missing engine or method")
@@ -373,9 +381,26 @@ class ProductionEffectFactory:
         # Convert UI parameters to engine format
         config = effect.to_engine_config()
         
-        # Apply effect using unified interface (all methods now expect clip, start_time, duration, **params)
         try:
-            return method(clip, effect.start_time, effect.duration, **config)
+            # Handle different engine interfaces
+            engine_type = effect.name.lower()
+            
+            if 'audio' in engine_type or effect.engine_method.startswith('create_beat'):
+                # Audio Sync effects: method(clip, beat_time, **params)
+                # Use start_time as beat_time
+                beat_time = effect.start_time
+                return method(clip, beat_time, **config)
+                
+            elif 'transition' in engine_type or effect.engine_method.endswith('_transition'):
+                # Transition effects: method(clip1, clip2, **params)
+                # For single clip application, create a black clip as first clip (transition FROM black TO clip)
+                from moviepy.editor import ColorClip
+                black_clip = ColorClip(size=clip.size, color=(0,0,0), duration=config.get('duration', 1.0))
+                return method(black_clip, clip, **config)
+                
+            else:
+                # Standard unified interface: method(clip, start_time, duration, **params)
+                return method(clip, effect.start_time, effect.duration, **config)
                 
         except Exception as e:
             print(f"Error applying effect {effect.name}: {e}")

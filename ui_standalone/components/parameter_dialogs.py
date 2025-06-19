@@ -913,9 +913,9 @@ class AudioSyncDialog(BaseParameterDialog):
             }
         elif 'color' in effect_name:
             return {
-                'warm_pulse': {'color_shift': '1.2,1.0,0.8'},
-                'cool_pulse': {'color_shift': '0.8,1.0,1.2'},
-                'rainbow_pulse': {'color_shift': '1.2,1.2,1.2'}
+                'warm_pulse': {'color_shift': '1.2,1.0,0.8', 'duration': 0.15},
+                'cool_pulse': {'color_shift': '0.8,1.0,1.2', 'duration': 0.15},
+                'rainbow_pulse': {'color_shift': '1.2,1.2,1.2', 'duration': 0.15}
             }
         else:
             return {
