@@ -53,6 +53,10 @@ class AnimeEffectsStudio:
         self.video_processor = VideoProcessor()
         self.current_video_path = None
         
+        # Thread management for preview updates
+        self.preview_thread = None
+        self.preview_cancel_event = threading.Event()
+        
         # Setup UI
         self.setup_ui()
         self.setup_bindings()
@@ -226,17 +230,40 @@ class AnimeEffectsStudio:
         if not self.current_video_path:
             return
             
-        # Process video with current pipeline in background
-        threading.Thread(
+        # Cancel any existing preview thread
+        if self.preview_thread and self.preview_thread.is_alive():
+            print(f"🛑 Cancelling existing preview thread...")
+            self.preview_cancel_event.set()
+            self.preview_thread.join(timeout=1.0)  # Wait up to 1 second for graceful shutdown
+            if self.preview_thread.is_alive():
+                print(f"⚠️ Preview thread did not exit gracefully, continuing anyway...")
+        
+        # Reset cancel event for new thread
+        self.preview_cancel_event.clear()
+        
+        # Start new preview thread
+        self.preview_thread = threading.Thread(
             target=self._update_preview_async,
             daemon=True
-        ).start()
+        )
+        self.preview_thread.start()
         
     def _update_preview_async(self):
         """Async preview update"""
         try:
+            # Check for cancellation before starting
+            if self.preview_cancel_event.is_set():
+                print("🛑 Preview thread cancelled before starting")
+                return
+                
+            print(f"🚀 Starting preview thread for {len(self.effect_pipeline.effects)} effects")
             # Show processing indicator
             self.video_preview.show_processing()
+            
+            # Check for cancellation again
+            if self.preview_cancel_event.is_set():
+                self.video_preview.hide_processing()
+                return
             
             # Skip preview generation if no effects
             if len(self.effect_pipeline.effects) == 0:
@@ -246,11 +273,22 @@ class AnimeEffectsStudio:
             
             print(f"🔄 Generating preview with {len(self.effect_pipeline.get_enabled_effects())} effects...")
             
+            # Check for cancellation before expensive operation
+            if self.preview_cancel_event.is_set():
+                self.video_preview.hide_processing()
+                return
+            
             # Apply effects pipeline
             preview_path = self.video_processor.generate_preview(
                 self.current_video_path,
-                self.effect_pipeline
+                self.effect_pipeline,
+                self.preview_cancel_event
             )
+            
+            # Check for cancellation before updating UI
+            if self.preview_cancel_event.is_set():
+                self.video_preview.hide_processing()
+                return
             
             if preview_path:
                 print(f"✅ Preview generated: {preview_path}")
@@ -260,12 +298,14 @@ class AnimeEffectsStudio:
                 print("⚠️ Preview generation returned no path")
             
         except Exception as e:
-            print(f"❌ Preview generation failed: {str(e)}")
+            if not self.preview_cancel_event.is_set():
+                print(f"❌ Preview generation failed: {str(e)}")
             # Don't show popup for preview errors, just log them
         finally:
-            self.video_preview.hide_processing()
+            if not self.preview_cancel_event.is_set():
+                self.video_preview.hide_processing()
             
-    def export_video(self):
+    def export_video(self, export_settings=None):
         """Export final video with all effects applied"""
         if not self.current_video_path:
             messagebox.showwarning("No Video", "Please load a video file first.")
@@ -274,31 +314,28 @@ class AnimeEffectsStudio:
         if len(self.effect_pipeline.effects) == 0:
             messagebox.showwarning("No Effects", "Please add some effects before exporting.")
             return
+        
+        # If called without settings (e.g., from keyboard shortcut), show export dialog
+        if export_settings is None:
+            self.video_preview.show_export_dialog()
+            return
             
-        # Get export settings from preview panel
-        export_settings = self.video_preview.get_export_settings()
+        # Extract output path from settings
+        output_path = export_settings.get('output_path')
+        if not output_path:
+            messagebox.showerror("Export Error", "No output path specified.")
+            return
         
-        # Choose output file
-        output_path = filedialog.asksaveasfilename(
-            title="Export Video",
-            defaultextension=".mp4",
-            filetypes=[("MP4 files", "*.mp4"), ("All files", "*.*")]
-        )
-        
-        if output_path:
-            # Start export in background
-            threading.Thread(
-                target=self._export_video_async,
-                args=(output_path, export_settings),
-                daemon=True
-            ).start()
+        # Start export in background
+        threading.Thread(
+            target=self._export_video_async,
+            args=(output_path, export_settings),
+            daemon=True
+        ).start()
             
     def _export_video_async(self, output_path, settings):
         """Async video export"""
         try:
-            # Show export progress
-            self.video_preview.show_export_progress()
-            
             # Process and export video
             self.video_processor.export_video(
                 self.current_video_path,
@@ -308,12 +345,14 @@ class AnimeEffectsStudio:
                 progress_callback=self.video_preview.update_export_progress
             )
             
+            # Notify completion
+            self.video_preview.export_completed(success=True)
             messagebox.showinfo("Export Complete", f"Video exported successfully to:\n{output_path}")
             
         except Exception as e:
+            # Notify failure
+            self.video_preview.export_completed(success=False)
             messagebox.showerror("Export Error", f"Failed to export video: {str(e)}")
-        finally:
-            self.video_preview.hide_export_progress()
             
     def save_pipeline(self):
         """Save current effects pipeline to file"""

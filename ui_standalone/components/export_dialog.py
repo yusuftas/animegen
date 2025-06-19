@@ -36,8 +36,9 @@ class ExportDialog:
         # Create dialog window
         self.dialog = ctk.CTkToplevel(self.parent)
         self.dialog.title("Export Video - Render Settings")
-        self.dialog.geometry("600x500")
-        self.dialog.resizable(False, False)
+        self.dialog.geometry("650x600")
+        self.dialog.resizable(True, True)
+        self.dialog.minsize(600, 550)
         
         # Center the dialog
         self.dialog.transient(self.parent)

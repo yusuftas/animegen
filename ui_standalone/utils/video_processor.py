@@ -40,22 +40,41 @@ class VideoProcessor:
         
         
     
-    def generate_preview(self, video_path: str, pipeline: EffectPipeline) -> Optional[str]:
+    def generate_preview(self, video_path: str, pipeline: EffectPipeline, cancel_event: Optional[threading.Event] = None) -> Optional[str]:
         """Generate preview video with effects applied"""
         if not VideoFileClip:
             print("⚠️ MoviePy not available, returning original video")
             return video_path
             
         try:
+            # Check for cancellation before acquiring lock
+            if cancel_event and cancel_event.is_set():
+                return None
+                
             with self.processing_lock:
+                # Check for cancellation after acquiring lock
+                if cancel_event and cancel_event.is_set():
+                    return None
+                    
                 print(f"🎬 Loading video: {video_path}")
                 # Load video
                 clip = VideoFileClip(video_path)
                 
+                # Check for cancellation after loading
+                if cancel_event and cancel_event.is_set():
+                    clip.close()
+                    return None
+                
                 print(f"📐 Video info: {clip.duration:.1f}s, {clip.fps}fps, {clip.size}")
                 
                 # Apply effects
-                processed_clip = self._apply_effects_pipeline(clip, pipeline)
+                processed_clip = self._apply_effects_pipeline(clip, pipeline, cancel_event=cancel_event)
+                
+                # Check for cancellation before export
+                if cancel_event and cancel_event.is_set():
+                    clip.close()
+                    processed_clip.close()
+                    return None
                 
                 # Generate preview (lower quality for speed)
                 preview_filename = f"preview_{os.path.basename(video_path)}"
@@ -64,6 +83,8 @@ class VideoProcessor:
                 print(f"💾 Exporting preview to: {preview_path}")
                 
                 # Export preview with lower quality and no audio for speed
+                # Note: MoviePy write_videofile doesn't support cancellation mid-process
+                # But we check before starting the export
                 processed_clip.write_videofile(
                     preview_path,
                     codec='libx264',
@@ -178,12 +199,18 @@ class VideoProcessor:
             raise
     
     def _apply_effects_pipeline(self, clip, pipeline: EffectPipeline, 
-                               progress_callback: Optional[Callable[[float], None]] = None):
+                               progress_callback: Optional[Callable[[float], None]] = None,
+                               cancel_event: Optional[threading.Event] = None):
         """Apply all effects in the pipeline to the clip"""
         processed_clip = clip
         enabled_effects = pipeline.get_enabled_effects()
         
         for i, effect in enumerate(enabled_effects):
+            # Check for cancellation before processing each effect
+            if cancel_event and cancel_event.is_set():
+                print(f"🛑 Effects processing cancelled at effect {i+1}/{len(enabled_effects)}")
+                return processed_clip
+                
             try:
                 # Check if this is a production effect (new adapter system)
                 if isinstance(effect, ProductionEffect):
