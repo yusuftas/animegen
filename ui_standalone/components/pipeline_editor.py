@@ -70,33 +70,27 @@ class EffectItem:
         )
         category_label.pack(side="right", padx=5)
         
-        # Timing info
-        timing_frame = ctk.CTkFrame(info_frame)
-        timing_frame.pack(fill="x", padx=5, pady=2)
-        
-        timing_text = f"Start: {self.effect.start_time:.1f}s"
-        if self.effect.duration:
-            timing_text += f", Duration: {self.effect.duration:.1f}s"
-        else:
-            timing_text += ", Duration: Full clip"
-        
-        self.timing_label = ctk.CTkLabel(
-            timing_frame,
-            text=timing_text,
-            font=ctk.CTkFont(size=10),
-            text_color="gray"
-        )
-        self.timing_label.pack(side="left", padx=5)
+        # Timing info removed - already displayed in parameters
         
         # Parameters preview
         if self.effect.parameters:
             params_frame = ctk.CTkFrame(info_frame)
             params_frame.pack(fill="x", padx=5, pady=2)
             
-            # Show first few parameters
+            # Show first few parameters with proper formatting
             param_texts = []
             for name, param in list(self.effect.parameters.items())[:3]:
-                param_texts.append(f"{name}: {param.value}")
+                # Format parameter values for better readability
+                if isinstance(param.value, float):
+                    # Round floats to 2 decimal places
+                    formatted_value = f"{param.value:.2f}"
+                elif isinstance(param.value, list) and all(isinstance(x, (int, float)) for x in param.value):
+                    # Format numeric lists/tuples with rounded values
+                    formatted_value = "[" + ", ".join(f"{x:.1f}" if isinstance(x, float) else str(x) for x in param.value) + "]"
+                else:
+                    # Keep other types as-is
+                    formatted_value = str(param.value)
+                param_texts.append(f"{name}: {formatted_value}")
             
             if len(self.effect.parameters) > 3:
                 param_texts.append("...")

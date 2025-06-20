@@ -260,15 +260,45 @@ class BaseParameterDialog:
         def on_slider_change(value):
             if param.param_type == 'int':
                 value = int(value)
+            else:
+                # Round float values to avoid long decimal places
+                # Determine decimal places based on step size
+                if step >= 1.0:
+                    decimal_places = 0
+                elif step >= 0.1:
+                    decimal_places = 1
+                elif step >= 0.01:
+                    decimal_places = 2
+                else:
+                    decimal_places = 3
+                value = round(value, decimal_places)
+            
+            # # Apply video duration constraints for timing parameters
+            # if param_name == 'start_time':
+            #     # Ensure start_time doesn't exceed video duration - 0.1s
+            #     value = min(value, max(0.0, self.video_duration - 0.1))
+            # elif param_name == 'duration':
+            #     # Ensure duration doesn't exceed remaining video time
+            #     current_start_time = self.get_current_start_time()
+            #     max_duration = max(0.1, self.video_duration - current_start_time)
+            #     value = min(value, max_duration)
+            
+            # Ensure value stays within parameter bounds
+            value = max(min_val, min(value, max_val))
+            
             value_var.set(value)
             value_label.configure(text=f"{value}")
             self.on_parameter_changed(param_name, value)
+        
+        # Calculate reasonable number of steps (cap at 1000 to avoid performance issues)
+        calculated_steps = int((max_val - min_val) / step)
+        number_of_steps = min(max(1, calculated_steps), 1000)
         
         slider = ctk.CTkSlider(
             container,
             from_=min_val,
             to=max_val,
-            number_of_steps=max(1, int((max_val - min_val) / step)),
+            number_of_steps=number_of_steps,
             command=on_slider_change
         )
         slider.set(min(float(param.value), max_val))  # Ensure value doesn't exceed new max
@@ -684,6 +714,18 @@ class BaseParameterDialog:
                         
             except (ValueError, TypeError):
                 return False
+        
+        # Additional validation for timing parameters vs video duration
+        start_time = self.get_current_start_time()
+        duration = self.get_current_duration()
+        
+        # Check if start_time + duration exceeds video duration
+        if start_time + duration > self.video_duration:
+            return False
+            
+        # Check if start_time is within video bounds
+        if start_time >= self.video_duration:
+            return False
         
         return True
 

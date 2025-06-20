@@ -298,25 +298,27 @@ class EffectEngineRegistry:
         """Create UI parameters from engine preset configuration"""
         parameters = {}
         
-        # Add standard timing parameters
+        # Add standard timing parameters with intuitive bounds
+        start_bounds = self._get_parameter_bounds('start_time', 'float', 0.0)
         parameters['start_time'] = EffectParameter(
             name='Start Time',
             value=0.0,
             param_type='float',
             description='Start time of the effect (seconds)',
-            min_value=0.0,
-            max_value=300.0,  # 5 minutes max
-            step=0.1
+            min_value=start_bounds[0],
+            max_value=start_bounds[1],
+            step=start_bounds[2]
         )
         
+        duration_bounds = self._get_parameter_bounds('duration', 'float', 1.0)
         parameters['duration'] = EffectParameter(
             name='Duration', 
             value=1.0,
             param_type='float',
             description='Duration of the effect (seconds)',
-            min_value=0.1,
-            max_value=60.0,  # 1 minute max
-            step=0.1
+            min_value=duration_bounds[0],
+            max_value=duration_bounds[1],
+            step=duration_bounds[2]
         )
         
         for param_name, param_value in preset_config.items():
@@ -329,13 +331,100 @@ class EffectEngineRegistry:
                 description=f"{param_name.replace('_', ' ').title()} parameter"
             )
             
-            # Add constraints based on parameter name and type
+            # Add constraints based on parameter name and type with more intuitive ranges
             if param_type in ['float', 'int']:
-                parameters[param_name].min_value = 0.0 if param_type == 'float' else 0
-                parameters[param_name].max_value = 10.0 if param_type == 'float' else 100
-                parameters[param_name].step = 0.1 if param_type == 'float' else 1
+                min_val, max_val, step_val = self._get_parameter_bounds(param_name, param_type, param_value)
+                parameters[param_name].min_value = min_val
+                parameters[param_name].max_value = max_val
+                parameters[param_name].step = step_val
         
         return parameters
+    
+    def _get_parameter_bounds(self, param_name: str, param_type: str, current_value: Any) -> tuple:
+        """Get intuitive parameter bounds based on parameter name and type"""
+        name_lower = param_name.lower()
+        
+        # Parameter-specific bounds for more intuitive controls
+        parameter_bounds = {
+            # Intensity/strength parameters (0-1 range)
+            'intensity': (0.0, 1.0, 0.05),
+            'strength': (0.0, 1.0, 0.05),
+            'alpha': (0.0, 1.0, 0.05),
+            'opacity': (0.0, 1.0, 0.05),
+            
+            # Zoom/scale parameters (0.5-3.0 range)
+            'zoom_factor': (0.5, 3.0, 0.1),
+            'scale': (0.5, 3.0, 0.1),
+            'zoom': (0.5, 3.0, 0.1),
+            
+            # Motion parameters
+            'shake_intensity': (0, 50, 1),
+            'motion_angle': (0.0, 360.0, 5.0),
+            'blur_strength': (0.0, 20.0, 0.5),
+            'blur_size': (0, 20, 1),
+            
+            # Audio sync parameters
+            'beat_time': (0.0, 60.0, 0.1),
+            'tempo': (60.0, 200.0, 5.0),
+            'pulse_rate': (0.5, 20.0, 0.5),
+            
+            # Text parameters
+            'fontsize': (12, 72, 2),
+            'font_size': (12, 72, 2),
+            
+            # Color parameters
+            'threshold': (0.0, 1.0, 0.05),
+            'saturation': (0.0, 2.0, 0.1),
+            'brightness': (0.0, 2.0, 0.1),
+            'contrast': (0.0, 2.0, 0.1),
+            
+            # Animation parameters
+            'freeze_duration': (0.1, 10.0, 0.1),
+            'animation_speed': (0.1, 5.0, 0.1),
+            
+            # Timing parameters
+            'start_time': (0.0, 60.0, 0.1),  # 0-60 seconds with 0.1s steps
+            'duration': (0.1, 30.0, 0.1),   # 0.1-30 seconds with 0.1s steps
+            
+            # Transition parameters
+            'slice_count': (2, 20, 1),
+            'segments': (3, 16, 1),
+            'max_pixel_size': (2, 50, 2),
+        }
+        
+        # Check for exact match first
+        if name_lower in parameter_bounds:
+            return parameter_bounds[name_lower]
+        
+        # Check for partial matches
+        for key, bounds in parameter_bounds.items():
+            if key in name_lower:
+                return bounds
+        
+        # Default bounds based on type and current value
+        if param_type == 'float':
+            # For floats, create sensible range around current value
+            if isinstance(current_value, (int, float)):
+                val = float(current_value)
+                if val <= 1.0:
+                    return (0.0, 2.0, 0.1)  # For small values like intensities
+                elif val <= 10.0:
+                    return (0.0, 20.0, 0.5)  # For medium values
+                else:
+                    return (0.0, val * 2, val * 0.1)  # Scale with current value
+            else:
+                return (0.0, 5.0, 0.1)  # Conservative default
+        else:  # int
+            if isinstance(current_value, (int, float)):
+                val = int(current_value)
+                if val <= 10:
+                    return (0, 20, 1)
+                elif val <= 100:
+                    return (0, 200, 5)
+                else:
+                    return (0, val * 2, max(1, val // 10))
+            else:
+                return (0, 50, 1)  # Conservative default
     
     def _infer_parameter_type(self, value: Any) -> str:
         """Infer parameter type from value"""
